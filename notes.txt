@@ -1,0 +1,43 @@
+Use Flutter for both IOS and Android
+AI Body Fat Analyser
+
+Uses gpt prompt to analyze the photo for body fat percentage and returns a value, and a picture of a celebrity that has a similar body fat percentage.
+
+Once user downloads app, on first open, they will be asked questions to set up their profile.
+- Name for storage purposes on our end? if that makes sense? I have never developed an IOS app so recommend me the best way to store user data
+- age, gender, this will be one screen
+- height, weight, this will be one screen
+- activity level, goal, this will be one screen
+- After the goal, show a screen with a graphic of a graph that shows progress over time curve, better than without the app
+- After inputting all user information, the user will face a paywall screen asking if they want to unlock the app for $4.99
+- The user can only move forward if they tap unlock and pay $4.99
+- Above the payment portion, say a motivational message that promotes the app, like reach your fitness goals with accurate tracking and AI body composition analysis
+- User will be able to edit their profile at any time in the settings
+
+3 main tabs with the tabs on the bottom of the screen
+Left side tab is Home with Home icon:
+- This is where the graph will be displayed
+- The graph will track the users body fat percentage over time and match it with the photos
+- The graph will have a y axis of body fat percentage and an x axis of time. 
+- User will be able to click into each point on the graph to view the photo that was taken at that time, the body fat percentage, and the celebrity comparison.
+
+Middle tab, rounded, camera icon:
+- Will display the camera viewfinder with a frame to take a photo
+- Takes photo and stores it in the database that holds all user photos, locally?
+- Sends photo to GPT-4o to analyze the photo for body fat percentage
+- Start with just body fat percentage, later add muscle, bone, water, etc. percentages, this is depending on gpt capabilities
+
+Right side tab, similar style to the left side tab, make it symmetric:
+- This is where the user settings and preferences will be
+- User can set their height, weight, age, gender, activity level, and goal
+- User settings such as notifications, app theme, language, etc.
+- User can turn off the celebrity comparison feature if they want to, to just show body fat percentage
+
+
+Celebrity Comparison:
+Keep a database of percentage ranges and pictures of celebrities, will be hosted on cloudflare.
+key of dictionary is fat percentage
+value of dictionary is a pair of celebrity name and image 
+
+When user uploads a photo, the app will analyze the photo for body fat percentage and compare it with the values in the dictionary.
+The app will then display the celebrity name and image that has a similar body fat percentage, in addition to the body fat percentage of the user.
