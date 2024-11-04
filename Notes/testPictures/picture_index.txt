@@ -1,2 +1,9 @@
 test1 = 16%
 test2 = 25%
+test3 = 5%
+test4 = 21%
+test5 = 24%
+test6 = 30%
+test7 = 40%
+test8 = 10%
+test9 = 38%
