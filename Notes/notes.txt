@@ -41,3 +41,4 @@ value of dictionary is a pair of celebrity name and image
 
 When user uploads a photo, the app will analyze the photo for body fat percentage and compare it with the values in the dictionary.
 The app will then display the celebrity name and image that has a similar body fat percentage, in addition to the body fat percentage of the user.
+- Collect database of celebrities and their body fat percentage ranges
