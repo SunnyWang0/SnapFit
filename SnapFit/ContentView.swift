@@ -45,6 +45,10 @@ struct ContentView: View {
                 }
                 .onDelete(perform: deleteItems)
             }
+            .listStyle(.plain)
+            .safeAreaInset(edge: .top, spacing: 16) {
+                Color.clear
+            }
 #if os(macOS)
             .navigationSplitViewColumnWidth(min: 180, ideal: 200)
 #endif
