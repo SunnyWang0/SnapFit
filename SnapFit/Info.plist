@@ -6,5 +6,7 @@
 	<array>
 		<string>remote-notification</string>
 	</array>
+	<key>NSCameraUsageDescription</key>
+	<string>SnapFit needs access to your camera to take photos for your entries.</string>
 </dict>
 </plist>
