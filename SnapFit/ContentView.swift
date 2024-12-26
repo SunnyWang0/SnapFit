@@ -45,8 +45,8 @@ struct ContentView: View {
                 }
                 .onDelete(perform: deleteItems)
             }
-            .padding(.top, 2)
-            .scrollContentBackground(.hidden)
+            .padding(.top, 0.5)
+            .scrollContentBackgound(.hidden)
             .background(Color(.systemGroupedBackground))
 #if os(macOS)
             .navigationSplitViewColumnWidth(min: 180, ideal: 200)
