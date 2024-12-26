@@ -49,7 +49,12 @@ struct ContentView: View {
             .navigationSplitViewColumnWidth(min: 180, ideal: 200)
 #endif
             .navigationTitle("Journal")
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                ToolbarItem(placement: .principal) {
+                    Text("Journal")
+                        .font(.headline)
+                }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button(action: { isShowingCamera = true }) {
                         Label("Add Item", systemImage: "plus")
