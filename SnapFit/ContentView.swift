@@ -50,12 +50,7 @@ struct ContentView: View {
 #endif
             .navigationTitle("Journal")
             .toolbar {
-#if os(iOS)
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    EditButton()
-                }
-#endif
-                ToolbarItem {
                     Button(action: { isShowingCamera = true }) {
                         Label("Add Item", systemImage: "plus")
                     }
