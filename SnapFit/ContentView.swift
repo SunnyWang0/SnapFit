@@ -28,7 +28,7 @@ struct ContentView: View {
                                     .resizable()
                                     .scaledToFit()
                             }
-                            Text("Item at \(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .shortened))")
+                            Text("Logged on \(item.timestamp, format: Date.FormatStyle(date: .numeric)) at \(item.timestamp, format: Date.FormatStyle(time: .shortened))")
                         }
                     } label: {
                         HStack {
