@@ -28,7 +28,7 @@ struct ContentView: View {
                                     .resizable()
                                     .scaledToFit()
                             }
-                            Text("Item at \(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))")
+                            Text("Item at \(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .shortened))")
                         }
                     } label: {
                         HStack {
@@ -39,7 +39,7 @@ struct ContentView: View {
                                     .frame(width: 44, height: 44)
                                     .cornerRadius(8)
                             }
-                            Text(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))
+                            Text(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .shortened))
                         }
                     }
                 }
