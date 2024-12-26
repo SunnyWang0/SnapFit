@@ -1,4 +1,4 @@
-AI Body Fat Analyser
+AI Body Fat Analyser - IOS
 
 Uses gpt prompt to analyze the photo for body fat percentage and returns a value, and a picture of a celebrity that has a similar body fat percentage.
 
