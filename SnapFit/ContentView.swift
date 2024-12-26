@@ -45,7 +45,7 @@ struct ContentView: View {
                 }
                 .onDelete(perform: deleteItems)
             }
-            .padding(.top, 8)
+            .padding(.top, 2)
             .scrollContentBackground(.hidden)
             .background(Color(.systemGroupedBackground))
 #if os(macOS)
