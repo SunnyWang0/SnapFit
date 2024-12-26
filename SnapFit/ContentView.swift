@@ -54,13 +54,8 @@ struct ContentView: View {
                     EditButton()
                 }
 #endif
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(action: { isShowingCamera = true }) {
-                        Label("Take Photo", systemImage: "camera")
-                    }
-                }
                 ToolbarItem {
-                    Button(action: addItem) {
+                    Button(action: { isShowingCamera = true }) {
                         Label("Add Item", systemImage: "plus")
                     }
                 }
