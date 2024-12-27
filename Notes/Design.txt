@@ -1,9 +1,6 @@
 3 main tabs with the tabs on the bottom of the screen
 Left side tab is Home with Home icon:
-- This is where the graph will be displayed
-- The graph will track the users body fat percentage over time and match it with the photos
-- The graph will have a y axis of body fat percentage and an x axis of time. 
-- User will be able to click into each point on the graph to view the photo that was taken at that time, the body fat percentage, and the celebrity comparison.
+- Dual overlay
 
 Middle tab, rounded, camera icon:
 - Will display the camera viewfinder with a frame to take a photo
