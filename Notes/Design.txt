@@ -13,3 +13,5 @@ Right side tab, similar style to the left side tab, make it symmetric:
 - User can set their height, weight, age, gender, activity level, and goal
 - User settings such as notifications, app theme, language, etc.
 - User can turn off the celebrity comparison feature if they want to, to just show body fat percentage
+
+Camera Overlay:
