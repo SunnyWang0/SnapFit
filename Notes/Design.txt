@@ -19,4 +19,4 @@ Camera Overlay:
 - Overlay with past photo for positioning
 
 Features:
-- Comparison betwee
+- Comparison between 
