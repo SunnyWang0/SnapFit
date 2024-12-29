@@ -20,4 +20,4 @@ Camera Overlay:
 
 Features:
 - Comparison between photos over interval
-- SAtats
+- 
