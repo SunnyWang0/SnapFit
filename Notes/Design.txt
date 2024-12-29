@@ -16,5 +16,4 @@ Right side tab, similar style to the left side tab, make it symmetric:
 
 Camera Overlay:
 - Hints
-- Overlay with past photo for positionin
-g
+- Overlay with past photo for positioning
