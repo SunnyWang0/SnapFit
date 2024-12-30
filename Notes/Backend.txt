@@ -4,3 +4,5 @@ Create a backend endpoint on Cloudflare
 - Backend endpoint sends the photo to GPT
 - Get a response from the model
 - Returns the response to the user
+
+In order to limit the amount of requests:
