@@ -41,5 +41,12 @@ In order to enhance backend authentication:
 - Ability to revoke API keys if abuse is detected
 - Validate image size and format before processing
 
+6. API Key Management:
+API Key Management:
+Store active keys in Cloudflare KV
+Structure: {apiKey: {userId, createdAt, lastUsed, usageCount}}
+Implement key rotation if needed
+Add ability to disable/enable keys
+
 In order to limit the amount of requests:
 - Add count on user side for amount of photos taken
