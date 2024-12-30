@@ -1,1 +1,3 @@
 Create a backend endpoint on Cloudflare
+
+- Whenever a user takes a photo
