@@ -30,6 +30,11 @@ In order to enhance backend authentication:
     3. Ensuring the Request ID hasn't been used before (prevent duplicates)
     4. Validating the request signature
 
+4. Rate Limiting:
+- Implement per-user rate limits (e.g., max 10 requests per hour)
+- Store usage metrics in Cloudflare KV
+- Consider implementing a paid tier for higher limits
+
 
 In order to limit the amount of requests:
 - Add count on user side for amount of photos taken
