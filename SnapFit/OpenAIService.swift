@@ -1,20 +1,11 @@
 import Foundation
-import CryptoKit
 
 class OpenAIService {
-    // This is a simple obfuscation key, not meant for serious security
-    private static let salt = "SnapFit2024"
-    private static let encryptedKey = "YOUR_ENCRYPTED_API_KEY" // You'll replace this with your encrypted key
-    
     private let apiKey: String
     private let endpoint = "https://api.openai.com/v1/chat/completions"
     
-    init() {
-        // Basic deobfuscation - this is not meant for high security
-        // but provides basic protection against casual inspection
-        let combined = OpenAIService.salt + OpenAIService.encryptedKey
-        let hash = SHA256.hash(data: combined.data(using: .utf8)!)
-        self.apiKey = hash.map { String(format: "%02x", $0) }.joined()
+    init(apiKey: String) {
+        self.apiKey = apiKey
     }
     
     func analyzeBodyFat(imageData: Data) async throws -> String {
