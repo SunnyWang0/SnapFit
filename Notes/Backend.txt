@@ -7,5 +7,7 @@ Create a backend endpoint on Cloudflare
 
 In order to enhance backend authentication:
 
+
+
 In order to limit the amount of requests:
 - Add count on user side for amount of photos taken
