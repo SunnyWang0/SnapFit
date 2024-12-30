@@ -5,4 +5,6 @@ Create a backend endpoint on Cloudflare
 - Get a response from the model
 - Returns the response to the user
 
+In order to enhance backend authentication:
+
 In order to limit the amount of requests:
