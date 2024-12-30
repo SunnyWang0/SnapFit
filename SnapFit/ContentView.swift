@@ -15,21 +15,35 @@ struct ContentView: View {
     @Query private var items: [Item]
     @State private var isShowingCamera = false
     @State private var image: UIImage?
+    @State private var isAnalyzing = false
+    @State private var errorMessage: String?
+    
+    private let openAIService = OpenAIService(apiKey: "YOUR_API_KEY_HERE") // Replace with your API key
     
     var body: some View {
         NavigationSplitView {
             List {
                 ForEach(items) { item in
                     NavigationLink {
-                        VStack {
+                        VStack(spacing: 16) {
                             if let imageData = item.imageData,
                                let uiImage = UIImage(data: imageData) {
                                 Image(uiImage: uiImage)
                                     .resizable()
                                     .scaledToFit()
                             }
+                            
+                            if let analysis = item.bodyFatAnalysis {
+                                Text(analysis)
+                                    .padding()
+                                    .background(Color(.systemBackground))
+                                    .cornerRadius(10)
+                            }
+                            
                             Text("Logged on \(item.timestamp, format: Date.FormatStyle(date: .numeric)) at \(item.timestamp, format: Date.FormatStyle(time: .shortened))")
+                                .foregroundStyle(.secondary)
                         }
+                        .padding()
                     } label: {
                         HStack {
                             if let imageData = item.imageData,
@@ -39,7 +53,16 @@ struct ContentView: View {
                                     .frame(width: 44, height: 44)
                                     .cornerRadius(8)
                             }
-                            Text(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .shortened))
+                            
+                            VStack(alignment: .leading) {
+                                Text(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .shortened))
+                                if let analysis = item.bodyFatAnalysis {
+                                    Text(analysis)
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                        .lineLimit(1)
+                                }
+                            }
                         }
                     }
                 }
@@ -56,6 +79,7 @@ struct ContentView: View {
                     Button(action: { isShowingCamera = true }) {
                         Label("Add Item", systemImage: "plus")
                     }
+                    .disabled(isAnalyzing)
                 }
             }
             .sheet(isPresented: $isShowingCamera) {
@@ -63,27 +87,55 @@ struct ContentView: View {
                     .ignoresSafeArea()
                     .onDisappear {
                         if let image = image {
-                            addItemWithImage(image)
+                            Task {
+                                await addItemWithImage(image)
+                            }
                         }
                     }
+            }
+            .overlay {
+                if isAnalyzing {
+                    ProgressView("Analyzing image...")
+                        .padding()
+                        .background(Color(.systemBackground))
+                        .cornerRadius(10)
+                }
             }
         } detail: {
             Text("Select an item")
         }
-    }
-
-    private func addItem() {
-        withAnimation {
-            let newItem = Item(timestamp: Date())
-            modelContext.insert(newItem)
+        .alert("Error", isPresented: .constant(errorMessage != nil)) {
+            Button("OK") {
+                errorMessage = nil
+            }
+        } message: {
+            if let errorMessage = errorMessage {
+                Text(errorMessage)
+            }
         }
     }
     
-    private func addItemWithImage(_ image: UIImage) {
-        withAnimation {
-            if let imageData = image.jpegData(compressionQuality: 0.8) {
-                let newItem = Item(timestamp: Date(), imageData: imageData)
-                modelContext.insert(newItem)
+    private func addItemWithImage(_ image: UIImage) async {
+        isAnalyzing = true
+        defer { isAnalyzing = false }
+        
+        guard let imageData = image.jpegData(compressionQuality: 0.8) else {
+            errorMessage = "Failed to process image"
+            return
+        }
+        
+        do {
+            let analysis = try await openAIService.analyzeBodyFat(imageData: imageData)
+            
+            await MainActor.run {
+                withAnimation {
+                    let newItem = Item(timestamp: Date(), imageData: imageData, bodyFatAnalysis: analysis)
+                    modelContext.insert(newItem)
+                }
+            }
+        } catch {
+            await MainActor.run {
+                errorMessage = "Failed to analyze image: \(error.localizedDescription)"
             }
         }
     }

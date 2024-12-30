@@ -12,9 +12,11 @@ import SwiftData
 final class Item {
     var timestamp: Date
     var imageData: Data?
+    var bodyFatAnalysis: String?
     
-    init(timestamp: Date, imageData: Data? = nil) {
+    init(timestamp: Date, imageData: Data? = nil, bodyFatAnalysis: String? = nil) {
         self.timestamp = timestamp
         self.imageData = imageData
+        self.bodyFatAnalysis = bodyFatAnalysis
     }
 }
