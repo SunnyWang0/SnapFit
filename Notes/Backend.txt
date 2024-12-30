@@ -49,3 +49,4 @@ In order to enhance backend authentication:
 
 In order to limit the amount of requests:
 - Add count on user side for amount of photos taken
+- Validate that count on the backend as well
