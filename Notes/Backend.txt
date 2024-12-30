@@ -21,5 +21,15 @@ In order to enhance backend authentication:
    - Request ID (unique per request)
    - Signature (HMAC of the request payload)
 
+3. Validation Layer:
+
+- Cloudflare Worker maintains a database (e.g., KV store) of valid API keys
+- Each request is validated by:
+    1. Checking if the API key exists and is active
+    2. Verifying the timestamp is within an acceptable window (e.g., 5 minutes)
+    3. Ensuring the Request ID hasn't been used before (prevent duplicates)
+    4. Validating the request signature
+
+
 In order to limit the amount of requests:
 - Add count on user side for amount of photos taken
