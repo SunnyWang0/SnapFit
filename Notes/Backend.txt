@@ -7,6 +7,12 @@ Create a backend endpoint on Cloudflare
 
 In order to enhance backend authentication:
 
+1. User-Based Authentication:
+- When a user first installs and opens the app, generate a unique device identifier
+- Make an initial registration request to your Cloudflare Worker
+- The Worker generates a unique API key for this device/user
+- Store this API key securely in the iOS Keychain
+
 
 
 In order to limit the amount of requests:
