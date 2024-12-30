@@ -1,3 +1,4 @@
 Create a backend endpoint on Cloudflare
 
 - Whenever a user takes a photo, send the photo to the backend endpoint
+- Backend endpoint sends the photo to GPT
