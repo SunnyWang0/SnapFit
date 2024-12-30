@@ -17,8 +17,19 @@ struct ContentView: View {
     @State private var image: UIImage?
     @State private var isAnalyzing = false
     @State private var errorMessage: String?
+    @State private var isShowingAPIKeyAlert = false
+    @State private var apiKeyInput = ""
     
-    private let openAIService = OpenAIService(apiKey: "YOUR_API_KEY_HERE") // Replace with your API key
+    private var openAIService: OpenAIService?
+    
+    init() {
+        do {
+            self.openAIService = try OpenAIService()
+        } catch {
+            // Will handle in onAppear
+            self.openAIService = nil
+        }
+    }
     
     var body: some View {
         NavigationSplitView {
@@ -104,9 +115,32 @@ struct ContentView: View {
         } detail: {
             Text("Select an item")
         }
+        .onAppear {
+            if openAIService == nil {
+                isShowingAPIKeyAlert = true
+            }
+        }
+        .alert("Enter OpenAI API Key", isPresented: $isShowingAPIKeyAlert) {
+            TextField("API Key", text: $apiKeyInput)
+            Button("Save") {
+                do {
+                    try OpenAIService.setAPIKey(apiKeyInput)
+                    self.openAIService = try OpenAIService()
+                    apiKeyInput = ""
+                } catch {
+                    errorMessage = "Failed to save API key: \(error.localizedDescription)"
+                }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Please enter your OpenAI API key to enable image analysis")
+        }
         .alert("Error", isPresented: .constant(errorMessage != nil)) {
             Button("OK") {
                 errorMessage = nil
+                if openAIService == nil {
+                    isShowingAPIKeyAlert = true
+                }
             }
         } message: {
             if let errorMessage = errorMessage {
@@ -116,6 +150,12 @@ struct ContentView: View {
     }
     
     private func addItemWithImage(_ image: UIImage) async {
+        guard let openAIService = self.openAIService else {
+            errorMessage = "OpenAI service not configured"
+            isShowingAPIKeyAlert = true
+            return
+        }
+        
         isAnalyzing = true
         defer { isAnalyzing = false }
         

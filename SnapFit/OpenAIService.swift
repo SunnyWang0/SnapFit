@@ -1,11 +1,16 @@
 import Foundation
 
 class OpenAIService {
-    private let apiKey: String
+    private var apiKey: String
     private let endpoint = "https://api.openai.com/v1/chat/completions"
     
-    init(apiKey: String) {
-        self.apiKey = apiKey
+    init() throws {
+        // Try to get API key from Keychain
+        self.apiKey = try KeychainManager.shared.getAPIKey()
+    }
+    
+    static func setAPIKey(_ key: String) throws {
+        try KeychainManager.shared.saveAPIKey(key)
     }
     
     func analyzeBodyFat(imageData: Data) async throws -> String {
