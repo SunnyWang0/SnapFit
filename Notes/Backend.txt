@@ -35,6 +35,11 @@ In order to enhance backend authentication:
 - Store usage metrics in Cloudflare KV
 - Consider implementing a paid tier for higher limits
 
+5. Security Considerations:
+- Implement request expiry (old timestamps rejected)
+- Log suspicious activity (multiple failed attempts)
+- Ability to revoke API keys if abuse is detected
+- Validate image size and format before processing
 
 In order to limit the amount of requests:
 - Add count on user side for amount of photos taken
