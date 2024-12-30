@@ -13,7 +13,13 @@ In order to enhance backend authentication:
 - The Worker generates a unique API key for this device/user
 - Store this API key securely in the iOS Keychain
 
+2. Request Signing Process:
 
+   Request Structure:
+   - API Key (identifies the user)
+   - Timestamp (prevents replay attacks)
+   - Request ID (unique per request)
+   - Signature (HMAC of the request payload)
 
 In order to limit the amount of requests:
 - Add count on user side for amount of photos taken
