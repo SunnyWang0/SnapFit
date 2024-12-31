@@ -13,7 +13,7 @@ class OpenAIService {
         
         let systemPrompt = """
         You are a fitness expert specialized in body composition analysis. Analyze the provided image and estimate the body fat percentage to the best of your ability. \
-        Consider visible muscle definition, body shape, and other relevant factors. \
+        Consider visible muscle definition, body shape, lighting, posture, and other relevant factors. \
         Provide a concise response with: 
         1. Estimated body fat percentage (range)
         2. Brief explanation of key visual indicators
