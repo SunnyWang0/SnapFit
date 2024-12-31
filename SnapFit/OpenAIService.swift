@@ -15,7 +15,7 @@ class OpenAIService {
         You are a fitness expert specialized in body composition analysis. Analyze the provided image and estimate the body fat percentage to the best of your ability. \
         Consider visible muscle definition, body shape, lighting, posture, and other relevant factors. \
         Provide a single numerical value representing the estimated body fat percentage to the nearest tenth of a percent. \
-        
+        Do not include any additional text or formatting in your response.
         """
         
         let requestBody: [String: Any] = [
