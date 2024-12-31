@@ -18,7 +18,7 @@ class OpenAIService {
         Do not include any additional text or formatting in your response. The user is aware that this is an estimate and not an exact measurement. \ 
         However, still give your best estimate as a single numerical value to the nearest tenth of a percent.
 
-        Example output:
+        Example output: 12.3
         """
         
         let requestBody: [String: Any] = [
