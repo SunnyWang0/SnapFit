@@ -12,7 +12,7 @@ class OpenAIService {
         let base64Image = imageData.base64EncodedString()
         
         let systemPrompt = """
-        You are a fitness expert specialized in body composition analysis. Analyze the provided image and estimate the body fat percentage. \
+        You are a fitness expert specialized in body composition analysis. Analyze the provided image and estimate the body fat percentage to the best of your ability. \
         Consider visible muscle definition, body shape, and other relevant factors. \
         Provide a concise response with: 
         1. Estimated body fat percentage (range)
