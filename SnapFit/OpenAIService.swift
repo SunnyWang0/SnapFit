@@ -26,6 +26,7 @@ class OpenAIService {
         * Fat distribution patterns
         * Vascularity
         * Anatomical landmark visibility
+        * Overall body shape
         
         - Secondary factors:
         * Image lighting conditions
