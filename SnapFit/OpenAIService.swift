@@ -22,7 +22,7 @@ class OpenAIService {
         """
         
         let requestBody: [String: Any] = [
-            "model": "chatgpt-4o-latest",
+            "model": "chatgpt-4o-latest", // or gpt-4o-mini
             "messages": [
                 [
                     "role": "system",
