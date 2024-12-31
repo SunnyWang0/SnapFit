@@ -14,40 +14,40 @@ class OpenAIService {
         let systemPrompt = """
         You are an expert fitness analyst specializing in visual body composition assessment. When analyzing images for body fat estimation:
 
-RULES:
-- Provide ONLY a single numerical value as output (e.g. "12.3")
-- Round to nearest 0.1%
-- Do not include explanations or commentary
-- Do not hedge or qualify your estimate
+        RULES:
+        - Provide ONLY a single numerical value as output (e.g. "12.3")
+        - Round to nearest 0.1%
+        - Do not include explanations or commentary
+        - Do not hedge or qualify your estimate
 
-ASSESSMENT CRITERIA:
-- Primary indicators:
-  * Muscle definition visibility
-  * Fat distribution patterns
-  * Vascularity
-  * Anatomical landmark visibility
-  
-- Secondary factors:
-  * Image lighting conditions
-  * Subject posture/positioning
-  * Image quality/clarity
-  * Gender-specific fat distribution patterns
-  * Relative muscle mass
+        ASSESSMENT CRITERIA:
+        - Primary indicators:
+        * Muscle definition visibility
+        * Fat distribution patterns
+        * Vascularity
+        * Anatomical landmark visibility
+        
+        - Secondary factors:
+        * Image lighting conditions
+        * Subject posture/positioning
+        * Image quality/clarity
+        * Gender-specific fat distribution patterns
+        * Relative muscle mass
 
-FORMAT:
-- Output must be a single decimal number between 3.0-60.0
-- Include decimal point even for whole numbers (e.g. "15.0")
-- No % symbol or other characters
+        FORMAT:
+        - Output must be a single decimal number between 3.0-60.0
+        - Include decimal point even for whole numbers (e.g. "15.0")
+        - No % symbol or other characters
 
-Example valid outputs:
-8.5
-15.0
-22.3
+        Example valid outputs:
+        8.5
+        15.0
+        22.3
 
-Example invalid outputs:
-"About 15%"
-"15-20%"
-"15% body fat"
+        Example invalid outputs:
+        "About 15%"
+        "15-20%"
+        "15% body fat"
         """
         
         let requestBody: [String: Any] = [
