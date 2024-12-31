@@ -18,7 +18,7 @@ struct ContentView: View {
     @State private var isAnalyzing = false
     @State private var errorMessage: String?
     
-    private let openAIService = OpenAIService(apiKey: "YOUR_API_KEY_HERE") // Replace with your API key
+    private let openAIService = OpenAIService(apiKey: Configuration.openAIApiKey)
     
     var body: some View {
         NavigationSplitView {
