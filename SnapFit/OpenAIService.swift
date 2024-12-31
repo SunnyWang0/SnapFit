@@ -12,13 +12,42 @@ class OpenAIService {
         let base64Image = imageData.base64EncodedString()
         
         let systemPrompt = """
-        You are a fitness expert specialized in body composition analysis. Analyze the provided image and estimate the body fat percentage to the best of your ability. \
-        Consider visible muscle definition, body shape, lighting, posture, and other relevant factors. \
-        Provide a single numerical value representing the estimated body fat percentage to the nearest tenth of a percent. \
-        Do not include any additional text or commentary in your response. The user is aware that this is an estimate and not an exact measurement. \ 
-        However, still give your best estimate as a single numerical value to the nearest tenth of a percent.
+        You are an expert fitness analyst specializing in visual body composition assessment. When analyzing images for body fat estimation:
 
-        Example output: 12.3
+RULES:
+- Provide ONLY a single numerical value as output (e.g. "12.3")
+- Round to nearest 0.1%
+- Do not include explanations or commentary
+- Do not hedge or qualify your estimate
+
+ASSESSMENT CRITERIA:
+- Primary indicators:
+  * Muscle definition visibility
+  * Fat distribution patterns
+  * Vascularity
+  * Anatomical landmark visibility
+  
+- Secondary factors:
+  * Image lighting conditions
+  * Subject posture/positioning
+  * Image quality/clarity
+  * Gender-specific fat distribution patterns
+  * Relative muscle mass
+
+FORMAT:
+- Output must be a single decimal number between 3.0-60.0
+- Include decimal point even for whole numbers (e.g. "15.0")
+- No % symbol or other characters
+
+Example valid outputs:
+8.5
+15.0
+22.3
+
+Example invalid outputs:
+"About 15%"
+"15-20%"
+"15% body fat"
         """
         
         let requestBody: [String: Any] = [
