@@ -22,7 +22,7 @@ class OpenAIService {
         """
         
         let requestBody: [String: Any] = [
-            "model": "gpt-4-vision-preview",
+            "model": "chatgpt-4o-latest",
             "messages": [
                 [
                     "role": "system",
