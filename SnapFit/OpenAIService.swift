@@ -32,6 +32,10 @@ class OpenAIService {
                     "role": "user",
                     "content": [
                         [
+                            "type": "text",
+                            "text": "Please analyze this image and provide the body fat percentage."
+                        ],
+                        [
                             "type": "image_url",
                             "image_url": [
                                 "url": "data:image/jpeg;base64,\(base64Image)"
