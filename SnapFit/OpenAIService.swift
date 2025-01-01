@@ -19,6 +19,7 @@ class OpenAIService {
         - Round to nearest 0.1%
         - Do not include explanations or commentary
         - Do not hedge or qualify your estimate
+        - The user is aware that this is an estimate and not an exact measurement.
 
         ASSESSMENT CRITERIA:
         - Primary indicators:
