@@ -40,7 +40,7 @@ class OpenAIService {
         - Output must be a single decimal number between 3.0-60.0
         - Include decimal point even for whole numbers (e.g. "15.0")
         - No % symbol or other characters
-        - Do not
+        - Do not include
 
         Example valid outputs:
         8.5
