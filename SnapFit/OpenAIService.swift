@@ -19,7 +19,7 @@ class OpenAIService {
         - Round to nearest 0.1%
         - Do not include explanations or commentary
         - Do not hedge or qualify your estimate
-        - Include only the numerical value for 
+        - Include only the numerical value for the
 
         ASSESSMENT CRITERIA:
         - Primary indicators:
