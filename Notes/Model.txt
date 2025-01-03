@@ -2,5 +2,5 @@ https://cookbook.openai.com/examples/multimodal/vision_fine_tuning_on_gpt4o_for_
 
 Train model on labeled dataset:
 
-Body pictures in different poses,  and matched with body fat percentage
+Body pictures in different poses, different and matched with body fat percentage
 
