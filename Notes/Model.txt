@@ -4,5 +4,5 @@ Train model on labeled dataset:
 
 Body pictures in different poses, lighting, and clothing matched with body fat percentage in all ranges
 
-- Multiple
+- Multiple images
 
