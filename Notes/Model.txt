@@ -6,4 +6,4 @@ Body pictures in different poses, lighting, and clothing matched with body fat p
 
 - Multiple images per datapoint
 
-Body fat prediction based on various body
+Body fat prediction based on various body part
