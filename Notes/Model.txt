@@ -8,5 +8,5 @@ Body pictures in different poses, lighting, and clothing matched with body fat p
 
 Body fat prediction based on various body measurements
 - Can be an extra feature: 
-    - instead of using image, use body
+    - instead of using image, use body measure
     - 
