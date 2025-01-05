@@ -9,4 +9,4 @@ Body pictures in different poses, lighting, and clothing matched with body fat p
 Body fat prediction based on various body measurements
 - Can be an extra feature: 
     - instead of using image, use body measurements to predict body fat percentage
-    - train model on 
+    - train model on dataset
