@@ -1,2 +1,4 @@
 test1 = 10%
-test2 = 15%
+test2 = 12%
+test3 = 15%
+test4 = 18%
