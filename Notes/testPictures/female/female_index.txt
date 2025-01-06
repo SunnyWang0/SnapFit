@@ -7,4 +7,6 @@ test6 = 23%
 test7 = 23%
 test8 = 26%
 test9 = 30%
-tset10 = 35%
+test10 = 35%
+test11 = 40%
+test12 = 45%
