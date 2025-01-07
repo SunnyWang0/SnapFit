@@ -1,6 +1,7 @@
 Create a backend endpoint on Cloudflare
 
 - Whenever a user takes a photo, send the photo to the backend endpoint
+    - Temporarily upload the photo to a secure cloud storage service (like AWS S3, Google Cloud Storage, or Azure Blob Storage)
 - Backend endpoint sends the photo to GPT
 - Get a response from the model
 - Returns the response to the user
