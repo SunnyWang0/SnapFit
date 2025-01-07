@@ -45,75 +45,26 @@ struct HomeView: View {
     var body: some View {
         NavigationStack {
             List {
-                // Progress Section
-                Section {
-                    VStack(spacing: 20) {
-                        // Recent photos grid
-                        LazyVGrid(columns: [
-                            GridItem(.flexible()),
-                            GridItem(.flexible())
-                        ], spacing: 16) {
-                            ForEach(items.prefix(4)) { item in
-                                if let imageData = item.imageData,
-                                   let uiImage = UIImage(data: imageData) {
-                                    Image(uiImage: uiImage)
-                                        .resizable()
-                                        .aspectRatio(contentMode: .fill)
-                                        .frame(height: 150)
-                                        .clipShape(RoundedRectangle(cornerRadius: 12))
-                                }
+                ForEach(items) { item in
+                    NavigationLink {
+                        VStack(spacing: 16) {
+                            if let imageData = item.imageData,
+                               let uiImage = UIImage(data: imageData) {
+                                Image(uiImage: uiImage)
+                                    .resizable()
+                                    .scaledToFit()
                             }
+                            
+                            Text("Logged on \(item.timestamp, format: Date.FormatStyle(date: .numeric)) at \(item.timestamp, format: Date.FormatStyle(time: .shortened))")
+                                .foregroundStyle(.secondary)
                         }
+                        .padding()
+                    } label: {
+                        Text(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .shortened))
                     }
-                    .padding(.vertical)
                 }
-                .listRowInsets(EdgeInsets())
-                .listRowBackground(Color.clear)
-                .listSectionSpacing(.compact)
-                
-                // Journal Entries Section
-                Section {
-                    ForEach(items) { item in
-                        NavigationLink {
-                            VStack(spacing: 16) {
-                                if let imageData = item.imageData,
-                                   let uiImage = UIImage(data: imageData) {
-                                    Image(uiImage: uiImage)
-                                        .resizable()
-                                        .scaledToFit()
-                                }
-                                
-                                Text("Logged on \(item.timestamp, format: Date.FormatStyle(date: .numeric)) at \(item.timestamp, format: Date.FormatStyle(time: .shortened))")
-                                    .foregroundStyle(.secondary)
-                            }
-                            .padding()
-                        } label: {
-                            HStack {
-                                if let imageData = item.imageData,
-                                   let uiImage = UIImage(data: imageData) {
-                                    Image(uiImage: uiImage)
-                                        .resizable()
-                                        .frame(width: 44, height: 44)
-                                        .cornerRadius(8)
-                                }
-                                
-                                VStack(alignment: .leading) {
-                                    Text(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .shortened))
-                                    if let analysis = item.bodyFatAnalysis {
-                                        Text(analysis)
-                                            .font(.caption)
-                                            .foregroundStyle(.secondary)
-                                            .lineLimit(1)
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    .onDelete(perform: deleteItems)
-                }
+                .onDelete(perform: deleteItems)
             }
-            .scrollContentBackground(.hidden)
-            .background(Color(.systemGroupedBackground))
             .navigationTitle("Journal")
         }
     }
