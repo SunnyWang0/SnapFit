@@ -69,6 +69,7 @@ struct HomeView: View {
                 }
                 .listRowInsets(EdgeInsets())
                 .listRowBackground(Color.clear)
+                .listSectionSpacing(.compact)
                 
                 // Journal Entries Section
                 Section {
