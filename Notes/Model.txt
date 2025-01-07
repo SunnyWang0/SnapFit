@@ -13,4 +13,5 @@ Body fat prediction based on various body measurements
     
 Mini-dataset here: https://www.ruled.me/visually-estimate-body-fat-percentage/
 
-Fine
+Fine-Tune: 
+- https://platform.openai.com/docs/guides/fine-tuning#vision
