@@ -8,48 +8,73 @@ class OpenAIService {
         self.apiKey = apiKey
     }
     
-    enum ImageInput {
-        case url(String)
-        case base64(Data)
-    }
-    
-    func analyzeBodyFat(image: ImageInput) async throws -> String {
+    func analyzeBodyFat(imageData: Data) async throws -> String {
+        let base64Image = imageData.base64EncodedString()
+        
         let systemPrompt = """
-        You are a body composition analysis expert. Analyze the image and output ONLY a single decimal number representing body fat percentage.
+        You are an expert fitness analyst specializing in visual body composition assessment. When analyzing images for body fat estimation:
 
-        OUTPUT RULES:
-        - Single decimal number between 3.0-60.0
+        RULES:
+        - Provide ONLY a single numerical value as output (e.g. "12.3")
         - Round to nearest 0.1%
-        - Include decimal point (e.g. "15.0")
-        - No text, symbols, or explanations
+        - Do not include explanations or commentary
+        - Do not hedge or qualify your estimate
+        - Include only the numerical value for the body fat percentage
 
-        ANALYSIS CRITERIA:
-        - Muscle definition
-        - Fat distribution
-        - Vascularity
-        - Anatomical landmarks
-        - Gender-specific patterns
-        - Overall physique
-        - Image quality factors
+        ASSESSMENT CRITERIA:
+        - Primary indicators:
+        * Muscle definition visibility
+        * Fat distribution patterns
+        * Vascularity
+        * Anatomical landmark visibility
+        * Overall body shape
+        * Any other relevant factors
+        
+        - Secondary factors:
+        * Image lighting conditions
+        * Subject posture/positioning
+        * Image quality/clarity
+        * Gender-specific fat distribution patterns
+        * Relative muscle mass
+
+        FORMAT:
+        - Output must be a single decimal number between 3.0-60.0
+        - Include decimal point even for whole numbers (e.g. "15.0")
+        - No % symbol or other characters
+
+        Example valid outputs:
+        8.5
+        15.0
+        22.3
+
+        Example invalid outputs:
+        "About 15%"
+        "15-20%"
+        "15% body fat"
         """
         
-        let imageContent: [String: Any]
-        
-        switch image {
-        case .url(let urlString):
-            imageContent = ["url": urlString]
-        case .base64(let imageData):
-            imageContent = ["url": "data:image/jpeg;base64,\(imageData.base64EncodedString())"]
-        }
-        
         let requestBody: [String: Any] = [
-            "model": "gpt-4-vision-preview",
+            "model": "chatgpt-4o-latest", // or gpt-4o-mini
             "messages": [
-                ["role": "system", "content": systemPrompt],
-                ["role": "user", "content": [
-                    ["type": "text", "text": "Analyze this image and provide the exact body fat percentage as a decimal number."],
-                    ["type": "image_url", "image_url": imageContent]
-                ]]
+                [
+                    "role": "system",
+                    "content": systemPrompt
+                ],
+                [
+                    "role": "user",
+                    "content": [
+                        [
+                            "type": "text",
+                            "text": "Analyze this image and provide the exact body fat percentage as a decimal number."
+                        ],
+                        [
+                            "type": "image_url",
+                            "image_url": [
+                                "url": "data:image/jpeg;base64,\(base64Image)"
+                            ]
+                        ]
+                    ]
+                ]
             ],
             "max_tokens": 150
         ]

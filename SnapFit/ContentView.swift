@@ -18,8 +18,6 @@ struct ContentView: View {
     @State private var isAnalyzing = false
     @State private var errorMessage: String?
     
-    private let openAIService = OpenAIService(apiKey: Configuration.openAIApiKey)
-    
     var body: some View {
         NavigationSplitView {
             List {
@@ -31,13 +29,6 @@ struct ContentView: View {
                                 Image(uiImage: uiImage)
                                     .resizable()
                                     .scaledToFit()
-                            }
-                            
-                            if let analysis = item.bodyFatAnalysis {
-                                Text(analysis)
-                                    .padding()
-                                    .background(Color(.systemBackground))
-                                    .cornerRadius(10)
                             }
                             
                             Text("Logged on \(item.timestamp, format: Date.FormatStyle(date: .numeric)) at \(item.timestamp, format: Date.FormatStyle(time: .shortened))")
@@ -56,12 +47,12 @@ struct ContentView: View {
                             
                             VStack(alignment: .leading) {
                                 Text(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .shortened))
-                                if let analysis = item.bodyFatAnalysis {
-                                    Text(analysis)
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                        .lineLimit(1)
-                                }
+                                // if let analysis = item.bodyFatAnalysis {
+                                //     Text(analysis)
+                                //         .font(.caption)
+                                //         .foregroundStyle(.secondary)
+                                //         .lineLimit(1)
+                                // }
                             }
                         }
                     }
@@ -116,8 +107,8 @@ struct ContentView: View {
     }
     
     private func addItemWithImage(_ image: UIImage) async {
-        isAnalyzing = true
-        defer { isAnalyzing = false }
+        // isAnalyzing = true
+        // defer { isAnalyzing = false }
         
         guard let imageData = image.jpegData(compressionQuality: 0.8) else {
             errorMessage = "Failed to process image"
@@ -125,14 +116,14 @@ struct ContentView: View {
         }
         
         do {
-            let analysis = try await openAIService.analyzeBodyFat(imageData: imageData)
+            // let analysis = try await openAIService.analyzeBodyFat(imageData: imageData)
             
-            await MainActor.run {
-                withAnimation {
-                    let newItem = Item(timestamp: Date(), imageData: imageData, bodyFatAnalysis: analysis)
-                    modelContext.insert(newItem)
-                }
-            }
+            // await MainActor.run {
+            //     withAnimation {
+            //         let newItem = Item(timestamp: Date(), imageData: imageData, bodyFatAnalysis: analysis)
+            //         modelContext.insert(newItem)
+            //     }
+            // }
         } catch {
             await MainActor.run {
                 errorMessage = "Failed to analyze image: \(error.localizedDescription)"
