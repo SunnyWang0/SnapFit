@@ -13,66 +13,109 @@ import AVFoundation
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     @Query private var items: [Item]
+    @State private var selectedTab = 0
+    
+    var body: some View {
+        TabView(selection: $selectedTab) {
+            HomeView(items: items)
+                .tabItem {
+                    Label("Home", systemImage: "house.fill")
+                }
+                .tag(0)
+            
+            CameraView(modelContext: modelContext)
+                .tabItem {
+                    Label("Camera", systemImage: "camera.fill")
+                }
+                .tag(1)
+            
+            SettingsView()
+                .tabItem {
+                    Label("Settings", systemImage: "gear")
+                }
+                .tag(2)
+        }
+    }
+}
+
+struct HomeView: View {
+    let items: [Item]
+    
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(spacing: 20) {
+                    // Placeholder for graphs
+                    Text("Progress Graphs")
+                        .font(.title2)
+                    
+                    // Recent photos grid
+                    LazyVGrid(columns: [
+                        GridItem(.flexible()),
+                        GridItem(.flexible())
+                    ], spacing: 16) {
+                        ForEach(items.prefix(4)) { item in
+                            if let imageData = item.imageData,
+                               let uiImage = UIImage(data: imageData) {
+                                Image(uiImage: uiImage)
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fill)
+                                    .frame(height: 150)
+                                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                            }
+                        }
+                    }
+                }
+                .padding()
+            }
+            .navigationTitle("Progress")
+        }
+    }
+}
+
+struct CameraView: View {
+    let modelContext: ModelContext
     @State private var isShowingCamera = false
     @State private var image: UIImage?
     @State private var isAnalyzing = false
     @State private var errorMessage: String?
     
     var body: some View {
-        NavigationSplitView {
-            List {
-                ForEach(items) { item in
-                    NavigationLink {
-                        VStack(spacing: 16) {
-                            if let imageData = item.imageData,
-                               let uiImage = UIImage(data: imageData) {
-                                Image(uiImage: uiImage)
-                                    .resizable()
-                                    .scaledToFit()
-                            }
-                            
-                            Text("Logged on \(item.timestamp, format: Date.FormatStyle(date: .numeric)) at \(item.timestamp, format: Date.FormatStyle(time: .shortened))")
-                                .foregroundStyle(.secondary)
-                        }
-                        .padding()
-                    } label: {
-                        HStack {
-                            if let imageData = item.imageData,
-                               let uiImage = UIImage(data: imageData) {
-                                Image(uiImage: uiImage)
-                                    .resizable()
-                                    .frame(width: 44, height: 44)
-                                    .cornerRadius(8)
-                            }
-                            
-                            VStack(alignment: .leading) {
-                                Text(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .shortened))
-                                // if let analysis = item.bodyFatAnalysis {
-                                //     Text(analysis)
-                                //         .font(.caption)
-                                //         .foregroundStyle(.secondary)
-                                //         .lineLimit(1)
-                                // }
+        NavigationStack {
+            VStack {
+                // Camera preview placeholder
+                ZStack {
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(Color.black.opacity(0.1))
+                        .aspectRatio(4/3, contentMode: .fit)
+                        .overlay {
+                            VStack {
+                                Image(systemName: "camera.fill")
+                                    .font(.largeTitle)
+                                Text("Take a Photo")
+                                    .font(.headline)
                             }
                         }
-                    }
                 }
-                .onDelete(perform: deleteItems)
-            }
-            .scrollContentBackground(.hidden)
-            .background(Color(.systemGroupedBackground))
-#if os(macOS)
-            .navigationSplitViewColumnWidth(min: 180, ideal: 200)
-#endif
-            .navigationTitle("Journal")
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(action: { isShowingCamera = true }) {
-                        Label("Add Item", systemImage: "plus")
-                    }
-                    .disabled(isAnalyzing)
+                .padding()
+                .onTapGesture {
+                    isShowingCamera = true
                 }
+                
+                // Hints
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("Tips for best results:")
+                        .font(.headline)
+                    
+                    TipRow(icon: "person.fill", text: "Stand 6-8 feet from camera")
+                    TipRow(icon: "light.max", text: "Ensure good lighting")
+                    TipRow(icon: "camera.filters", text: "Wear form-fitting clothes")
+                }
+                .padding()
+                
+                Spacer()
             }
+            .navigationTitle("Take Photo")
             .sheet(isPresented: $isShowingCamera) {
                 ImagePicker(image: $image, sourceType: .camera)
                     .ignoresSafeArea()
@@ -92,17 +135,6 @@ struct ContentView: View {
                         .cornerRadius(10)
                 }
             }
-        } detail: {
-            Text("Select an item")
-        }
-        .alert("Error", isPresented: .constant(errorMessage != nil)) {
-            Button("OK") {
-                errorMessage = nil
-            }
-        } message: {
-            if let errorMessage = errorMessage {
-                Text(errorMessage)
-            }
         }
     }
     
@@ -119,12 +151,61 @@ struct ContentView: View {
             }
         }
     }
+}
 
-    private func deleteItems(offsets: IndexSet) {
-        withAnimation {
-            for index in offsets {
-                modelContext.delete(items[index])
+struct TipRow: View {
+    let icon: String
+    let text: String
+    
+    var body: some View {
+        HStack {
+            Image(systemName: icon)
+                .frame(width: 24)
+            Text(text)
+        }
+        .foregroundStyle(.secondary)
+    }
+}
+
+struct SettingsView: View {
+    @AppStorage("userHeight") private var userHeight = ""
+    @AppStorage("userWeight") private var userWeight = ""
+    @AppStorage("userAge") private var userAge = ""
+    @AppStorage("userGender") private var userGender = "male"
+    @AppStorage("activityLevel") private var activityLevel = "moderate"
+    @AppStorage("showCelebrityComparison") private var showCelebrityComparison = true
+    
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("Personal Information") {
+                    TextField("Height", text: $userHeight)
+                        .keyboardType(.decimalPad)
+                    TextField("Weight", text: $userWeight)
+                        .keyboardType(.decimalPad)
+                    TextField("Age", text: $userAge)
+                        .keyboardType(.numberPad)
+                    Picker("Gender", selection: $userGender) {
+                        Text("Male").tag("male")
+                        Text("Female").tag("female")
+                    }
+                }
+                
+                Section("Activity Level") {
+                    Picker("Activity", selection: $activityLevel) {
+                        Text("Sedentary").tag("sedentary")
+                        Text("Light").tag("light")
+                        Text("Moderate").tag("moderate")
+                        Text("Active").tag("active")
+                        Text("Very Active").tag("very_active")
+                    }
+                }
+                
+                Section("Features") {
+                    Toggle("Show Celebrity Comparisons", isOn: $showCelebrityComparison)
+                }
             }
+            .navigationTitle("Settings")
         }
     }
 }
