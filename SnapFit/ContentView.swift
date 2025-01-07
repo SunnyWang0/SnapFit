@@ -40,35 +40,91 @@ struct ContentView: View {
 
 struct HomeView: View {
     let items: [Item]
+    @Environment(\.modelContext) private var modelContext
     
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(spacing: 20) {
-                    // Placeholder for graphs
-                    Text("Progress Graphs")
-                        .font(.title2)
-                    
-                    // Recent photos grid
-                    LazyVGrid(columns: [
-                        GridItem(.flexible()),
-                        GridItem(.flexible())
-                    ], spacing: 16) {
-                        ForEach(items.prefix(4)) { item in
-                            if let imageData = item.imageData,
-                               let uiImage = UIImage(data: imageData) {
-                                Image(uiImage: uiImage)
-                                    .resizable()
-                                    .aspectRatio(contentMode: .fill)
-                                    .frame(height: 150)
-                                    .clipShape(RoundedRectangle(cornerRadius: 12))
+            List {
+                // Progress Section
+                Section {
+                    VStack(spacing: 20) {
+                        Text("Progress Graphs")
+                            .font(.title2)
+                        
+                        // Recent photos grid
+                        LazyVGrid(columns: [
+                            GridItem(.flexible()),
+                            GridItem(.flexible())
+                        ], spacing: 16) {
+                            ForEach(items.prefix(4)) { item in
+                                if let imageData = item.imageData,
+                                   let uiImage = UIImage(data: imageData) {
+                                    Image(uiImage: uiImage)
+                                        .resizable()
+                                        .aspectRatio(contentMode: .fill)
+                                        .frame(height: 150)
+                                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                                }
                             }
                         }
                     }
+                    .padding(.vertical)
                 }
-                .padding()
+                .listRowInsets(EdgeInsets())
+                .listRowBackground(Color.clear)
+                
+                // Journal Entries Section
+                Section("Journal Entries") {
+                    ForEach(items) { item in
+                        NavigationLink {
+                            VStack(spacing: 16) {
+                                if let imageData = item.imageData,
+                                   let uiImage = UIImage(data: imageData) {
+                                    Image(uiImage: uiImage)
+                                        .resizable()
+                                        .scaledToFit()
+                                }
+                                
+                                Text("Logged on \(item.timestamp, format: Date.FormatStyle(date: .numeric)) at \(item.timestamp, format: Date.FormatStyle(time: .shortened))")
+                                    .foregroundStyle(.secondary)
+                            }
+                            .padding()
+                        } label: {
+                            HStack {
+                                if let imageData = item.imageData,
+                                   let uiImage = UIImage(data: imageData) {
+                                    Image(uiImage: uiImage)
+                                        .resizable()
+                                        .frame(width: 44, height: 44)
+                                        .cornerRadius(8)
+                                }
+                                
+                                VStack(alignment: .leading) {
+                                    Text(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .shortened))
+                                    if let analysis = item.bodyFatAnalysis {
+                                        Text(analysis)
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                            .lineLimit(1)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    .onDelete(perform: deleteItems)
+                }
             }
-            .navigationTitle("Progress")
+            .scrollContentBackground(.hidden)
+            .background(Color(.systemGroupedBackground))
+            .navigationTitle("SnapFit")
+        }
+    }
+    
+    private func deleteItems(offsets: IndexSet) {
+        withAnimation {
+            for index in offsets {
+                modelContext.delete(items[index])
+            }
         }
     }
 }
