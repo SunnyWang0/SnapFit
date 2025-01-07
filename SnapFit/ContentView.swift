@@ -107,26 +107,15 @@ struct ContentView: View {
     }
     
     private func addItemWithImage(_ image: UIImage) async {
-        // isAnalyzing = true
-        // defer { isAnalyzing = false }
-        
         guard let imageData = image.jpegData(compressionQuality: 0.8) else {
             errorMessage = "Failed to process image"
             return
         }
         
-        do {
-            // let analysis = try await openAIService.analyzeBodyFat(imageData: imageData)
-            
-            // await MainActor.run {
-            //     withAnimation {
-            //         let newItem = Item(timestamp: Date(), imageData: imageData, bodyFatAnalysis: analysis)
-            //         modelContext.insert(newItem)
-            //     }
-            // }
-        } catch {
-            await MainActor.run {
-                errorMessage = "Failed to analyze image: \(error.localizedDescription)"
+        await MainActor.run {
+            withAnimation {
+                let newItem = Item(timestamp: Date(), imageData: imageData, bodyFatAnalysis: nil)
+                modelContext.insert(newItem)
             }
         }
     }
