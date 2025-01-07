@@ -15,3 +15,4 @@ Mini-dataset here: https://www.ruled.me/visually-estimate-body-fat-percentage/
 
 Fine-Tune: 
 - https://platform.openai.com/docs/guides/fine-tuning#vision
+- Examples: https://platform.openai.com/docs/guides/fine-tuning#fine-tuning-examples
