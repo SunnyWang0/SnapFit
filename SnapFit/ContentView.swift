@@ -41,6 +41,10 @@ struct ContentView: View {
 struct HomeView: View {
     let items: [Item]
     @Environment(\.modelContext) private var modelContext
+    @State private var isShowingCamera = false
+    @State private var image: UIImage?
+    @State private var isAnalyzing = false
+    @State private var errorMessage: String?
     
     var body: some View {
         NavigationStack {
@@ -66,6 +70,42 @@ struct HomeView: View {
                 .onDelete(perform: deleteItems)
             }
             .navigationTitle("Journal")
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button(action: { isShowingCamera = true }) {
+                        Label("Add Item", systemImage: "plus")
+                    }
+                    .disabled(isAnalyzing)
+                }
+            }
+            .sheet(isPresented: $isShowingCamera) {
+                ImagePicker(image: $image, sourceType: .camera)
+                    .ignoresSafeArea()
+                    .onDisappear {
+                        if let image = image {
+                            Task {
+                                await addItemWithImage(image)
+                            }
+                        }
+                    }
+            }
+            .overlay {
+                if isAnalyzing {
+                    ProgressView("Analyzing image...")
+                        .padding()
+                        .background(Color(.systemBackground))
+                        .cornerRadius(10)
+                }
+            }
+            .alert("Error", isPresented: .constant(errorMessage != nil)) {
+                Button("OK") {
+                    errorMessage = nil
+                }
+            } message: {
+                if let errorMessage = errorMessage {
+                    Text(errorMessage)
+                }
+            }
         }
     }
     
@@ -73,6 +113,20 @@ struct HomeView: View {
         withAnimation {
             for index in offsets {
                 modelContext.delete(items[index])
+            }
+        }
+    }
+    
+    private func addItemWithImage(_ image: UIImage) async {
+        guard let imageData = image.jpegData(compressionQuality: 0.8) else {
+            errorMessage = "Failed to process image"
+            return
+        }
+        
+        await MainActor.run {
+            withAnimation {
+                let newItem = Item(timestamp: Date(), imageData: imageData, bodyFatAnalysis: nil)
+                modelContext.insert(newItem)
             }
         }
     }
