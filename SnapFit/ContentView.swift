@@ -48,9 +48,6 @@ struct HomeView: View {
                 // Progress Section
                 Section {
                     VStack(spacing: 20) {
-                        Text("Progress Graphs")
-                            .font(.title2)
-                        
                         // Recent photos grid
                         LazyVGrid(columns: [
                             GridItem(.flexible()),
@@ -74,7 +71,7 @@ struct HomeView: View {
                 .listRowBackground(Color.clear)
                 
                 // Journal Entries Section
-                Section("Journal Entries") {
+                Section {
                     ForEach(items) { item in
                         NavigationLink {
                             VStack(spacing: 16) {
@@ -116,7 +113,7 @@ struct HomeView: View {
             }
             .scrollContentBackground(.hidden)
             .background(Color(.systemGroupedBackground))
-            .navigationTitle("SnapFit")
+            .navigationTitle("Journal")
         }
     }
     
