@@ -12,3 +12,5 @@ Body fat prediction based on various body measurements
     - train model on dataset here: https://www.kaggle.com/datasets/fedesoriano/body-fat-prediction-dataset
     
 Mini-dataset here: https://www.ruled.me/visually-estimate-body-fat-percentage/
+
+Fine
