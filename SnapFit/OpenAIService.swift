@@ -65,7 +65,7 @@ class OpenAIService {
                     "content": [
                         [
                             "type": "text",
-                            "text": "Please analyze this image and provide the body fat percentage."
+                            "text": "Analyze this image and provide the exact body fat percentage as a decimal number."
                         ],
                         [
                             "type": "image_url",
