@@ -2,6 +2,7 @@
 Left side tab is Home with Home icon:
 - Dual overlay graph, with options to change overlays
 
+
 Middle tab, rounded, camera icon:
 - Will display the camera viewfinder with a frame to take a photo
 - Takes photo and stores it in the database that holds all user photos, locally?
