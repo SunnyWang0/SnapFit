@@ -1,6 +1,6 @@
 3 main tabs with the tabs on the bottom of the screen
 Left side tab is Home with Home icon:
-- Dual overlay graph, with options to change overlays
+- Dual overlay graph, with options to hide
     - Layer 1: Body fat percentage over time
     - Layer 2: Body weight over time
 
