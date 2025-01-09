@@ -4,7 +4,7 @@ Left side tab is Home with Home icon:
     - Layer 1: Body fat percentage over time
     - Layer 2: Body weight over time
 - List object below the graph with journal entries, displaying the date, time, and image
-    - Clicking on entry will enlarge the image and offer ability 
+    - Clicking on entry will enlarge the image and offer ability to compare
 
 Middle tab, rounded, camera icon:
 - Will display the camera viewfinder with a frame to take a photo
