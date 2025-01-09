@@ -3,7 +3,7 @@ Left side tab is Home with Home icon:
 - Dual overlay graph, with options to hide/show
     - Layer 1: Body fat percentage over time
     - Layer 2: Body weight over time
-- List object below the graph with 
+- List object below the graph
 
 Middle tab, rounded, camera icon:
 - Will display the camera viewfinder with a frame to take a photo
