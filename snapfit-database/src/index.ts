@@ -1,4 +1,5 @@
-import { Router } from 'itty-router';
+import { Router, IRequest } from 'itty-router';
+import { Buffer } from 'buffer';
 
 interface Env {
 	PHOTOS_BUCKET: R2Bucket;
@@ -16,6 +17,17 @@ interface PhotoMetadata {
 	weight?: number;
 	thumbnailKey: string;
 	originalKey: string;
+}
+
+interface UploadRequest {
+	userId: string;
+	timestamp: string;
+	image: string;
+}
+
+interface UpdateRequest {
+	bodyFat?: number;
+	weight?: number;
 }
 
 const router = Router();
@@ -42,9 +54,11 @@ async function processImage(file: ArrayBuffer, width?: number, height?: number, 
 }
 
 // Upload photo handler
-router.post('/upload', async (request: Request, env: Env) => {
+router.post('/upload', async (request: IRequest, env: Env) => {
 	try {
-		const { userId, timestamp, image } = await request.json();
+		const data = await request.json() as UploadRequest;
+		const { userId, timestamp, image } = data;
+		
 		if (!userId || !timestamp || !image) {
 			return new Response('Missing required fields', { status: 400 });
 		}
@@ -68,11 +82,11 @@ router.post('/upload', async (request: Request, env: Env) => {
 		await Promise.all([
 			env.PHOTOS_BUCKET.put(thumbnailKey, thumbnailBuffer, {
 				httpMetadata: { contentType: 'image/webp' },
-				cacheControl: 'public, max-age=31536000',
+				customMetadata: { cacheControl: 'public, max-age=31536000' },
 			}),
 			env.PHOTOS_BUCKET.put(originalKey, originalBuffer, {
 				httpMetadata: { contentType: 'image/webp' },
-				cacheControl: 'public, max-age=31536000',
+				customMetadata: { cacheControl: 'public, max-age=31536000' },
 			})
 		]);
 
@@ -94,7 +108,8 @@ router.post('/upload', async (request: Request, env: Env) => {
 			headers: { 'Content-Type': 'application/json' },
 		});
 	} catch (error) {
-		return new Response(JSON.stringify({ error: error.message }), {
+		const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+		return new Response(JSON.stringify({ error: errorMessage }), {
 			status: 500,
 			headers: { 'Content-Type': 'application/json' },
 		});
@@ -102,15 +117,19 @@ router.post('/upload', async (request: Request, env: Env) => {
 });
 
 // Get photos list with cursor-based pagination
-router.get('/photos/:userId', async (request: Request, env: Env) => {
+router.get('/photos/:userId', async (request: IRequest, env: Env) => {
 	try {
-		const { userId } = request.params;
+		const userId = request.params?.userId;
+		if (!userId) {
+			return new Response('User ID is required', { status: 400 });
+		}
+
 		const url = new URL(request.url);
 		const cursor = url.searchParams.get('cursor');
 		const limit = parseInt(url.searchParams.get('limit') || '10');
 
 		const prefix = `photo:${userId}:`;
-		const list = await env.PHOTO_CACHE.list({ prefix, cursor, limit });
+		const list = await env.PHOTO_CACHE.list({ prefix, cursor: cursor || undefined, limit });
 		
 		const photos = await Promise.all(
 			list.keys.map(async key => {
@@ -133,7 +152,8 @@ router.get('/photos/:userId', async (request: Request, env: Env) => {
 			}
 		);
 	} catch (error) {
-		return new Response(JSON.stringify({ error: error.message }), {
+		const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+		return new Response(JSON.stringify({ error: errorMessage }), {
 			status: 500,
 			headers: { 'Content-Type': 'application/json' },
 		});
@@ -141,9 +161,13 @@ router.get('/photos/:userId', async (request: Request, env: Env) => {
 });
 
 // Get photo (original or thumbnail)
-router.get('/photo/:key', async (request: Request, env: Env) => {
+router.get('/photo/:key', async (request: IRequest, env: Env) => {
 	try {
-		const { key } = request.params;
+		const key = request.params?.key;
+		if (!key) {
+			return new Response('Key is required', { status: 400 });
+		}
+
 		const url = new URL(request.url);
 		const type = url.searchParams.get('type') || 'thumbnail';
 
@@ -160,7 +184,8 @@ router.get('/photo/:key', async (request: Request, env: Env) => {
 
 		return new Response(object.body, { headers });
 	} catch (error) {
-		return new Response(JSON.stringify({ error: error.message }), {
+		const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+		return new Response(JSON.stringify({ error: errorMessage }), {
 			status: 500,
 			headers: { 'Content-Type': 'application/json' },
 		});
@@ -168,19 +193,29 @@ router.get('/photo/:key', async (request: Request, env: Env) => {
 });
 
 // Update photo metadata (body fat, weight)
-router.patch('/photo/:userId/:timestamp', async (request: Request, env: Env) => {
+router.patch('/photo/:userId/:timestamp', async (request: IRequest, env: Env) => {
 	try {
-		const { userId, timestamp } = request.params;
-		const updates = await request.json();
+		const userId = request.params?.userId;
+		const timestamp = request.params?.timestamp;
 		
+		if (!userId || !timestamp) {
+			return new Response('User ID and timestamp are required', { status: 400 });
+		}
+
+		const updates = await request.json() as UpdateRequest;
 		const key = `photo:${userId}:${timestamp}`;
-		const existing = await env.PHOTO_CACHE.get(key, 'json') as PhotoMetadata;
+		const existing = await env.PHOTO_CACHE.get(key, 'json') as PhotoMetadata | null;
 		
 		if (!existing) {
 			return new Response('Photo not found', { status: 404 });
 		}
 
-		const updated = { ...existing, ...updates };
+		const updated: PhotoMetadata = {
+			...existing,
+			...(updates.bodyFat !== undefined ? { bodyFat: updates.bodyFat } : {}),
+			...(updates.weight !== undefined ? { weight: updates.weight } : {})
+		};
+
 		await env.PHOTO_CACHE.put(key, JSON.stringify(updated), {
 			expirationTtl: 86400 * 30 // 30 days cache
 		});
@@ -189,7 +224,8 @@ router.patch('/photo/:userId/:timestamp', async (request: Request, env: Env) => 
 			headers: { 'Content-Type': 'application/json' },
 		});
 	} catch (error) {
-		return new Response(JSON.stringify({ error: error.message }), {
+		const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+		return new Response(JSON.stringify({ error: errorMessage }), {
 			status: 500,
 			headers: { 'Content-Type': 'application/json' },
 		});
