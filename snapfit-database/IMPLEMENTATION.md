@@ -100,125 +100,271 @@ Features:
 - Type-safe validation
 - Automatic cache management
 
-## iOS Implementation Guide
+## Type Safety and Error Handling
 
-### Setup
+### Worker Types
+
+```typescript
+// Photo metadata structure
+interface PhotoMetadata {
+	userId: string;
+	takenAt: string;
+	bodyFat?: number;
+	weight?: number;
+	thumbnailKey: string;
+	originalKey: string;
+}
+
+// API response types
+interface PhotoResponse {
+	metadata: PhotoMetadata;
+	photoUrl: string;
+	contentType: string;
+	nextKey?: string;
+}
+
+interface PhotoListResponse {
+	photos: PhotoResponse[];
+	cursor?: string;
+	hasMore: boolean;
+	preloadUrls?: string[];
+}
+```
+
+### iOS Types
 
 ```swift
+// Match the worker types
+struct PhotoMetadata: Codable {
+    let userId: String
+    let takenAt: String
+    let bodyFat: Double?
+    let weight: Double?
+    let thumbnailKey: String
+    let originalKey: String
+}
+
+struct PhotoResponse: Codable {
+    let metadata: PhotoMetadata
+    let photoUrl: String
+    let contentType: String
+    let nextKey: String?
+}
+
+struct PhotoListResponse: Codable {
+    let photos: [PhotoResponse]
+    let cursor: String?
+    let hasMore: Bool
+    let preloadUrls: [String]?
+}
+```
+
+## iOS Integration Details
+
+### PhotoService Implementation
+
+````swift
 class PhotoService {
-    private let baseUrl = "https://your-worker.workers.dev"
-    private let session = URLSession.shared
+    private let baseUrl: URL
+    private let session: URLSession
+    private let cache: NSCache<NSString, UIImage>
+    private let fileManager: FileManager
+
+    // Background upload queue
+    private let uploadQueue: OperationQueue
+
+    init(baseUrl: URL) {
+        self.baseUrl = baseUrl
+
+        // Configure session for background uploads
+        let config = URLSessionConfiguration.background(withIdentifier: "com.snapfit.upload")
+        config.isDiscretionary = true
+        config.sessionSendsLaunchEvents = true
+        self.session = URLSession(configuration: config)
+
+        // Configure cache
+        self.cache = NSCache<NSString, UIImage>()
+        cache.countLimit = 100 // Max number of thumbnails
+        cache.totalCostLimit = 50 * 1024 * 1024 // 50MB limit
+
+        // Configure upload queue
+        uploadQueue = OperationQueue()
+        uploadQueue.maxConcurrentOperationCount = 1
+
+        setupNotifications()
+    }
+
+    private func setupNotifications() {
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleMemoryWarning),
+            name: UIApplication.didReceiveMemoryWarningNotification,
+            object: nil
+        )
+    }
+
+    @objc private func handleMemoryWarning() {
+        cache.removeAllObjects()
+    }
 }
-```
 
-### Thumbnail List View
+// MARK: - Photo Loading
+extension PhotoService {
+    func loadThumbnails(userId: String, cursor: String? = nil) async throws -> PhotoListResponse {
+        let url = baseUrl
+            .appendingPathComponent("photos")
+            .appendingPathComponent(userId)
 
-```swift
-func fetchThumbnails(userId: String, cursor: String? = nil) async throws -> PhotoListResponse {
-    let url = "\(baseUrl)/photos/\(userId)?type=thumbnail&limit=20"
-        + (cursor.map { "&cursor=\($0)" } ?? "")
+        var components = URLComponents(url: url, resolvingAgainstBaseURL: true)!
+        components.queryItems = [
+            URLQueryItem(name: "type", value: "thumbnail"),
+            URLQueryItem(name: "limit", value: "20")
+        ]
 
-    let response = try await fetch(url)
+        if let cursor {
+            components.queryItems?.append(URLQueryItem(name: "cursor", value: cursor))
+        }
 
-    // Handle pre-fetching
-    if let preloadUrls = response.preloadUrls {
-        Task {
-            await prefetchImages(preloadUrls)
+        let response = try await fetch(components.url!)
+
+        // Start pre-fetching
+        if let preloadUrls = response.preloadUrls {
+            Task.detached(priority: .utility) {
+                await self.prefetchImages(preloadUrls)
+            }
+        }
+
+        return response
+    }
+
+    private func prefetchImages(_ urls: [String]) async {
+        await withTaskGroup(of: Void.self) { group in
+            for url in urls {
+                group.addTask {
+                    try? await self.prefetchImage(url)
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Upload Handling
+extension PhotoService {
+    func uploadPhoto(image: UIImage, userId: String) async throws -> UploadResponse {
+        let operation = PhotoUploadOperation(image: image, userId: userId, service: self)
+        uploadQueue.addOperation(operation)
+
+        return try await operation.result.value
+    }
+
+    func retryFailedUploads() {
+        // Implement retry logic for failed uploads
+        let failedUploads = loadFailedUploadsFromDisk()
+        for upload in failedUploads {
+            let operation = PhotoUploadOperation(
+                image: upload.image,
+                userId: upload.userId,
+                service: self
+            )
+            uploadQueue.addOperation(operation)
+        }
+    }
+}
+
+// MARK: - Error Handling
+extension PhotoService {
+    enum PhotoError: Error {
+        case compressionFailed
+        case networkError(Error)
+        case serverError(String)
+        case rateLimited(retryAfter: TimeInterval)
+
+        var isRetryable: Bool {
+            switch self {
+            case .compressionFailed: return false
+            case .networkError: return true
+            case .serverError: return true
+            case .rateLimited: return true
+            }
         }
     }
 
-    return response
+    private func handleError(_ error: Error) async throws {
+        guard let photoError = error as? PhotoError else {
+            throw error
+        }
+
+        switch photoError {
+        case .rateLimited(let retryAfter):
+            try await Task.sleep(nanoseconds: UInt64(retryAfter * 1_000_000_000))
+            // Retry the operation
+
+        case .networkError where photoError.isRetryable:
+            // Implement exponential backoff
+            try await performRetryWithBackoff()
+
+        default:
+            throw error
+        }
+    }
 }
 
-// UICollectionView implementation
-func configureCollectionView() {
-    collectionView.prefetchDataSource = self
-    // Use UICollectionViewDiffableDataSource for smooth updates
-}
-```
+## Advanced Features
 
-### Full-Size Image View
+### 1. Offline Support
+```swift
+class OfflineStorage {
+    private let store: CoreDataStore
+
+    func cachePhotosLocally(_ photos: [PhotoResponse]) {
+        // Store photos and metadata in Core Data
+        store.savePhotos(photos)
+    }
+
+    func loadCachedPhotos() -> [PhotoResponse] {
+        // Load cached photos when offline
+        return store.loadPhotos()
+    }
+}
+````
+
+### 2. Background Processing
 
 ```swift
-func fetchFullSizePhotos(userId: String, timestamp: String) async throws -> PhotoResponse {
-    let url = "\(baseUrl)/photos/\(userId)/\(timestamp)/original"
-    return try await fetch(url)
-}
+class BackgroundTaskManager {
+    private var backgroundTask: UIBackgroundTaskIdentifier = .invalid
 
-// Pre-fetch next/previous images
-func prefetchAdjacentImages(currentIndex: Int) {
-    guard let photos = currentPhotoList else { return }
+    func beginBackgroundTask() {
+        backgroundTask = UIApplication.shared.beginBackgroundTask { [weak self] in
+            self?.endBackgroundTask()
+        }
+    }
 
-    let nextIndex = currentIndex + 1
-    if nextIndex < photos.count {
-        Task {
-            await prefetchImage(photos[nextIndex].photoUrl)
+    func endBackgroundTask() {
+        if backgroundTask != .invalid {
+            UIApplication.shared.endBackgroundTask(backgroundTask)
+            backgroundTask = .invalid
         }
     }
 }
 ```
 
-### Upload Implementation
+### 3. Image Processing
 
 ```swift
-func uploadPhoto(image: UIImage, userId: String) async throws -> UploadResponse {
-    guard let imageData = image.jpegData(compressionQuality: 0.8) else {
-        throw PhotoError.compressionFailed
+extension UIImage {
+    func preparingForUpload() -> UIImage? {
+        let maxDimension: CGFloat = 2048
+        let scale = min(maxDimension / size.width, maxDimension / size.height, 1)
+
+        let newSize = CGSize(
+            width: size.width * scale,
+            height: size.height * scale
+        )
+
+        return resized(to: newSize)
     }
-
-    let base64Image = imageData.base64EncodedString()
-    let timestamp = ISO8601DateFormatter().string(from: Date())
-
-    let body = [
-        "userId": userId,
-        "timestamp": timestamp,
-        "image": base64Image
-    ]
-
-    return try await post("\(baseUrl)/upload", body: body)
 }
-```
-
-### Optimizations
-
-1. **Smooth Scrolling**
-
-   - Use UICollectionViewPrefetching
-   - Implement placeholder thumbnails
-   - Cache images in memory and disk
-
-   ```swift
-   let cache = NSCache<NSString, UIImage>()
-   ```
-
-2. **Memory Management**
-
-   - Implement proper image downsampling
-   - Clear cache when memory warnings occur
-
-   ```swift
-   NotificationCenter.default.addObserver(forName: UIApplication.didReceiveMemoryWarningNotification)
-   ```
-
-3. **Error Handling**
-
-   - Implement retry logic for failed requests
-   - Show appropriate UI feedback
-
-   ```swift
-   func handleError(_ error: Error) {
-       if case let NetworkError.rateLimited(retryAfter) = error {
-           scheduleRetry(after: retryAfter)
-       }
-   }
-   ```
-
-4. **Background Upload**
-   - Support background upload tasks
-   ```swift
-   let config = URLSessionConfiguration.background(withIdentifier: "com.snapfit.upload")
-   let session = URLSession(configuration: config)
-   ```
 
 ## Performance Considerations
 
@@ -244,3 +390,4 @@ func uploadPhoto(image: UIImage, userId: String) async throws -> UploadResponse 
    - Implement offline support
    - Queue failed uploads
    - Auto-retry on network restore
+```
