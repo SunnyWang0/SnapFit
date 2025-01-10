@@ -23,3 +23,29 @@ let response = await fetch("/photos/\(userId)?type=original&limit=20")
 
 // For a specific photo
 let response = await fetch("/photos/\(userId)/\(timestamp)/original")
+
+
+More examples using pre-fetching functionality:
+
+// For thumbnail list view
+func fetchPhotos(userId: String, cursor: String?) async {
+    let url = "/photos/\(userId)?type=thumbnail&limit=20"
+    let response = await fetch(url)
+    
+    // Pre-fetch next batch URLs
+    if let preloadUrls = response.preloadUrls {
+        // Start pre-fetching next batch
+        URLSession.shared.prefetchResources(preloadUrls)
+    }
+}
+
+// For full-size image view
+func fetchFullSizePhotos(userId: String, cursor: String?) async {
+    let url = "/photos/\(userId)?type=original&limit=10"
+    let response = await fetch(url)
+    
+    // Pre-fetch next images
+    if let preloadUrls = response.preloadUrls {
+        URLSession.shared.prefetchResources(preloadUrls)
+    }
+}
