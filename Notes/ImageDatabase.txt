@@ -10,3 +10,16 @@ Individual Photo Access:
 // Get specific photo (more secure)
 GET /photos/{userId}/{timestamp}/thumbnail
 GET /photos/{userId}/{timestamp}/original
+
+Examples:
+
+Using in the IOS App:
+
+// For the gallery view (thumbnails)
+let response = await fetch("/photos/\(userId)?type=thumbnail&limit=20")
+
+// For full-screen view (originals)
+let response = await fetch("/photos/\(userId)?type=original&limit=20")
+
+// For a specific photo
+let response = await fetch("/photos/\(userId)/\(timestamp)/original")
