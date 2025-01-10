@@ -117,6 +117,21 @@ router.post('/upload', async (request: RequestWithParams, env: Env) => {
 	}
 });
 
+// Update the KVNamespaceListResult interface
+interface KVNamespaceListResult<K, V> {
+	keys: KVListKey[];
+	list_complete: boolean;
+	cursor?: string;
+	cacheStatus: string | null;
+}
+
+interface PhotoResponse {
+	metadata: PhotoMetadata;
+	photoUrl: string;
+	contentType: string;
+	nextKey?: string;
+}
+
 // Get photos list with cursor-based pagination and pre-fetching
 router.get('/photos/:userId', async (request: RequestWithParams, env: Env) => {
 	try {
@@ -135,7 +150,7 @@ router.get('/photos/:userId', async (request: RequestWithParams, env: Env) => {
 			prefix: `photo:${userId}:`,
 			cursor: cursor || undefined,
 			limit: actualLimit
-		});
+		}) as KVNamespaceListResult<unknown, string>;
 
 		// Process current batch
 		const currentBatch = list.keys.slice(0, limit);
@@ -144,7 +159,7 @@ router.get('/photos/:userId', async (request: RequestWithParams, env: Env) => {
 		const [currentPhotos, nextPhotos] = await Promise.all([
 			// Process current batch
 			Promise.all(
-				currentBatch.map(async (key: KVListKey) => {
+				currentBatch.map(async (key: KVListKey): Promise<PhotoResponse | null> => {
 					const metadata = await env.PHOTO_CACHE.get(key.name, 'json') as PhotoMetadata;
 					if (!metadata) return null;
 
@@ -162,7 +177,7 @@ router.get('/photos/:userId', async (request: RequestWithParams, env: Env) => {
 			),
 			// Pre-fetch next batch if enabled
 			preload ? Promise.all(
-				nextBatch.map(async (key: KVListKey) => {
+				nextBatch.map(async (key: KVListKey): Promise<string | null> => {
 					const metadata = await env.PHOTO_CACHE.get(key.name, 'json') as PhotoMetadata;
 					if (!metadata) return null;
 
@@ -175,11 +190,14 @@ router.get('/photos/:userId', async (request: RequestWithParams, env: Env) => {
 			) : Promise.resolve([])
 		]);
 
+		const validPhotos = currentPhotos.filter((photo): photo is PhotoResponse => photo !== null);
+		const validPreloadUrls = nextPhotos.filter((url): url is string => url !== null);
+
 		const response: PhotoListResponse = {
-			photos: currentPhotos.filter(Boolean),
+			photos: validPhotos,
 			cursor: list.cursor,
 			hasMore: !list.list_complete,
-			preloadUrls: preload ? nextPhotos.filter(Boolean) : undefined
+			preloadUrls: preload ? validPreloadUrls : undefined
 		};
 
 		return Response.json(response, {
