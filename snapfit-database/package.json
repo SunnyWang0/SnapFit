@@ -13,11 +13,14 @@
     "@cloudflare/vitest-pool-workers": "^0.5.2",
     "@cloudflare/workers-types": "^4.20250109.0",
     "@types/node": "^20.11.16",
-    "typescript": "^5.5.2",
+    "@types/itty-router": "^4.0.0",
+    "typescript": "^5.3.3",
     "vitest": "2.1.8",
     "wrangler": "^3.60.3"
   },
   "dependencies": {
-    "itty-router": "^4.0.27"
+    "itty-router": "^4.0.27",
+    "buffer": "^6.0.3",
+    "@cloudflare/workers-types": "^4.20250109.0"
   }
 }
