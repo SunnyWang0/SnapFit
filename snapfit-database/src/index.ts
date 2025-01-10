@@ -1,15 +1,5 @@
 /// <reference types="@cloudflare/workers-types" />
-import { Router, IRequest } from 'itty-router';
-import { Buffer } from 'buffer';
-
-interface Env {
-	PHOTOS_BUCKET: R2Bucket;
-	PHOTO_CACHE: KVNamespace;
-	THUMBNAIL_WIDTH: string;
-	THUMBNAIL_HEIGHT: string;
-	THUMBNAIL_QUALITY: string;
-	ORIGINAL_QUALITY: string;
-}
+import { Router } from 'itty-router';
 
 interface PhotoMetadata {
 	userId: string;
@@ -20,27 +10,16 @@ interface PhotoMetadata {
 	originalKey: string;
 }
 
-interface UploadRequest {
-	userId: string;
-	timestamp: string;
-	image: string;
-}
-
-interface UpdateRequest {
-	bodyFat?: number;
-	weight?: number;
-}
-
-const router = Router();
+type PhotoType = 'original' | 'thumbnail';
 
 // Helper to generate storage keys
-function generateStorageKey(userId: string, timestamp: string, type: 'original' | 'thumbnail'): string {
+function generateStorageKey(userId: string, timestamp: string, type: PhotoType): string {
 	return `users/${userId}/photos/${timestamp}-${type}.webp`;
 }
 
 // Convert image to WebP with specified dimensions
 async function processImage(file: ArrayBuffer, width?: number, height?: number, quality: number = 80): Promise<ArrayBuffer> {
-	const image = await fetch('http://api.cloudflare.com/transform', {
+	return fetch('http://api.cloudflare.com/transform', {
 		method: 'POST',
 		body: file,
 		headers: {
@@ -49,31 +28,59 @@ async function processImage(file: ArrayBuffer, width?: number, height?: number, 
 			'Height': height?.toString() || '',
 			'Quality': quality.toString(),
 		},
-	}).then((res: Response) => res.arrayBuffer());
-	
-	return image;
+	}).then(res => res.arrayBuffer());
 }
 
-// Extend IRequest to include json method
-interface ExtendedIRequest extends IRequest {
-	json: () => Promise<any>;
-	url: string;
-}
+const router = Router();
 
 // Upload photo handler
-router.post('/upload', async (request: ExtendedIRequest, env: Env) => {
+router.post('/upload', async (request: Request, env: Env) => {
 	try {
-		const data = await request.json() as UploadRequest;
-		const { userId, timestamp, image } = data;
-		
+		const { userId, timestamp, image } = await request.json() as { 
+			userId: string; 
+			timestamp: string; 
+			image: string; 
+		};
+
 		if (!userId || !timestamp || !image) {
 			return new Response('Missing required fields', { status: 400 });
 		}
 
-		const imageBuffer = Buffer.from(image, 'base64');
+		const imageBuffer = new Uint8Array(Buffer.from(image, 'base64'));
 		const thumbnailKey = generateStorageKey(userId, timestamp, 'thumbnail');
 		const originalKey = generateStorageKey(userId, timestamp, 'original');
 
+		// Process and upload images in parallel
+		const [[thumbnailBuffer, originalBuffer], [thumbnailResult, originalResult]] = await Promise.all([
+			Promise.all([
+				processImage(imageBuffer, parseInt(env.THUMBNAIL_WIDTH), parseInt(env.THUMBNAIL_HEIGHT), parseInt(env.THUMBNAIL_QUALITY)),
+				processImage(imageBuffer, undefined, undefined, parseInt(env.ORIGINAL_QUALITY))
+			]),
+			Promise.all([
+				env.PHOTOS_BUCKET.put(thumbnailKey, imageBuffer, {
+					httpMetadata: { contentType: 'image/webp' },
+					customMetadata: { cacheControl: 'public, max-age=31536000' },
+				}),
+				env.PHOTOS_BUCKET.put(originalKey, imageBuffer, {
+					httpMetadata: { contentType: 'image/webp' },
+					customMetadata: { cacheControl: 'public, max-age=31536000' },
+				})
+			])
+		]);
+
+		// Store metadata
+		const metadata: PhotoMetadata = { userId, takenAt: timestamp, thumbnailKey, originalKey };
+		await env.PHOTO_CACHE.put(
+			`photo:${userId}:${timestamp}`,
+			JSON.stringify(metadata),
+			{ expirationTtl: 86400 * 30 }
+		);
+
+		return Response.json({ success: true });
+	} catch (error) {
+		return Response.json({ error: error instanceof Error ? error.message : 'Unknown error' }, { status: 500 });
+	}
+});
 		// Process images in parallel
 		const [thumbnailBuffer, originalBuffer] = await Promise.all([
 			processImage(

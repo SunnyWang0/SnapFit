@@ -6,21 +6,15 @@
     "deploy": "wrangler deploy",
     "dev": "wrangler dev",
     "start": "wrangler dev",
-    "test": "vitest",
-    "cf-typegen": "wrangler types"
+    "test": "vitest"
   },
   "devDependencies": {
-    "@cloudflare/vitest-pool-workers": "^0.5.2",
     "@cloudflare/workers-types": "^4.20240208.0",
-    "@types/node": "^20.11.19",
     "typescript": "^5.3.3",
-    "vitest": "2.1.8",
+    "vitest": "^2.1.8",
     "wrangler": "^3.60.3"
   },
   "dependencies": {
-    "itty-router": "^4.0.27",
-    "@types/itty-router": "^4.0.0",
-    "buffer": "^6.0.3",
-    "@types/buffer": "^5.1.5"
+    "itty-router": "^4.0.27"
   }
 }
