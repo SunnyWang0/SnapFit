@@ -1,0 +1,7 @@
+SnapFit is an app that helps users track their body fat percentage and weight over time.
+It allows users to take photos of themselves and get AI body fat analysis done.
+In this way, users can make sure that when they are cutting or bulking, they are doing so in a healthy way to meet their goals.
+
+Users will be able to take photos using their camera through the app, or upload photos from their camera roll. 
+The users can manually enter their body weight to track that as well. These stats will be tracking in a graph with a dual overlay so they can see how both their body fat percentage and weight are changing over time.
+Users will be able to click on different entries to see the photo on that day and compare with other photos of their choosing.
