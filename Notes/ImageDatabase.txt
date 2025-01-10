@@ -1,0 +1,14 @@
+
+For the list view (thumbnails):
+// Fetch first batch
+GET /photos/{userId}?limit=10
+
+// Fetch next batch using cursor
+GET /photos/{userId}?limit=10&cursor={previous_response_cursor}
+
+For individual photos:
+// Fetch thumbnail
+GET /photo/{thumbnailKey}?type=thumbnail
+
+// Fetch original when viewing full screen
+GET /photo/{originalKey}?type=original
