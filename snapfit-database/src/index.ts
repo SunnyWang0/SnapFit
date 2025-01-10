@@ -1,3 +1,4 @@
+/// <reference types="@cloudflare/workers-types" />
 import { Router, IRequest } from 'itty-router';
 import { Buffer } from 'buffer';
 
@@ -48,13 +49,19 @@ async function processImage(file: ArrayBuffer, width?: number, height?: number, 
 			'Height': height?.toString() || '',
 			'Quality': quality.toString(),
 		},
-	}).then(res => res.arrayBuffer());
+	}).then((res: Response) => res.arrayBuffer());
 	
 	return image;
 }
 
+// Extend IRequest to include json method
+interface ExtendedIRequest extends IRequest {
+	json: () => Promise<any>;
+	url: string;
+}
+
 // Upload photo handler
-router.post('/upload', async (request: IRequest, env: Env) => {
+router.post('/upload', async (request: ExtendedIRequest, env: Env) => {
 	try {
 		const data = await request.json() as UploadRequest;
 		const { userId, timestamp, image } = data;
@@ -117,7 +124,7 @@ router.post('/upload', async (request: IRequest, env: Env) => {
 });
 
 // Get photos list with cursor-based pagination
-router.get('/photos/:userId', async (request: IRequest, env: Env) => {
+router.get('/photos/:userId', async (request: ExtendedIRequest, env: Env) => {
 	try {
 		const userId = request.params?.userId;
 		if (!userId) {
@@ -126,17 +133,31 @@ router.get('/photos/:userId', async (request: IRequest, env: Env) => {
 
 		const url = new URL(request.url);
 		const cursor = url.searchParams.get('cursor');
-		const limit = parseInt(url.searchParams.get('limit') || '10');
+		const limit = parseInt(url.searchParams.get('limit') || '20');
+		const type = url.searchParams.get('type') || 'thumbnail'; // 'thumbnail' or 'original'
 
 		const prefix = `photo:${userId}:`;
 		const list = await env.PHOTO_CACHE.list({ prefix, cursor: cursor || undefined, limit });
 		
-		const photos = await Promise.all(
-			list.keys.map(async key => {
-				const metadata = await env.PHOTO_CACHE.get(key.name, 'json') as PhotoMetadata;
-				return metadata;
-			})
-		);
+		// Get metadata and photos in parallel for efficiency
+		const photosPromises = list.keys.map(async key => {
+			const metadata = await env.PHOTO_CACHE.get(key.name, 'json') as PhotoMetadata;
+			if (!metadata) return null;
+
+			// Get the appropriate photo key based on type
+			const photoKey = type === 'thumbnail' ? metadata.thumbnailKey : metadata.originalKey;
+			const photo = await env.PHOTOS_BUCKET.get(photoKey);
+			
+			if (!photo) return null;
+
+			return {
+				metadata,
+				photoUrl: photo.httpEtag, // Use etag as a cache key
+				contentType: photo.httpMetadata?.contentType || 'image/webp',
+			};
+		});
+
+		const photos = (await Promise.all(photosPromises)).filter(Boolean);
 
 		return new Response(
 			JSON.stringify({
@@ -160,8 +181,52 @@ router.get('/photos/:userId', async (request: IRequest, env: Env) => {
 	}
 });
 
+// Get specific photo for a user
+router.get('/photos/:userId/:timestamp/:type', async (request: ExtendedIRequest, env: Env) => {
+	try {
+		const { userId, timestamp, type } = request.params || {};
+		if (!userId || !timestamp || !type) {
+			return new Response('Missing required parameters', { status: 400 });
+		}
+
+		// First get metadata to verify ownership and get the correct key
+		const metadataKey = `photo:${userId}:${timestamp}`;
+		const metadata = await env.PHOTO_CACHE.get(metadataKey, 'json') as PhotoMetadata;
+		
+		if (!metadata) {
+			return new Response('Photo not found', { status: 404 });
+		}
+
+		// Verify the photo belongs to the requesting user
+		if (metadata.userId !== userId) {
+			return new Response('Unauthorized', { status: 403 });
+		}
+
+		// Get the appropriate photo key
+		const photoKey = type === 'thumbnail' ? metadata.thumbnailKey : metadata.originalKey;
+		const object = await env.PHOTOS_BUCKET.get(photoKey);
+		
+		if (!object) {
+			return new Response('Photo not found', { status: 404 });
+		}
+
+		const headers = new Headers();
+		object.writeHttpMetadata(headers);
+		headers.set('Cache-Control', 'public, max-age=31536000'); // Cache for 1 year
+		headers.set('etag', object.httpEtag);
+
+		return new Response(object.body, { headers });
+	} catch (error) {
+		const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+		return new Response(JSON.stringify({ error: errorMessage }), {
+			status: 500,
+			headers: { 'Content-Type': 'application/json' },
+		});
+	}
+});
+
 // Get photo (original or thumbnail)
-router.get('/photo/:key', async (request: IRequest, env: Env) => {
+router.get('/photo/:key', async (request: ExtendedIRequest, env: Env) => {
 	try {
 		const key = request.params?.key;
 		if (!key) {
@@ -193,7 +258,7 @@ router.get('/photo/:key', async (request: IRequest, env: Env) => {
 });
 
 // Update photo metadata (body fat, weight)
-router.patch('/photo/:userId/:timestamp', async (request: IRequest, env: Env) => {
+router.patch('/photo/:userId/:timestamp', async (request: ExtendedIRequest, env: Env) => {
 	try {
 		const userId = request.params?.userId;
 		const timestamp = request.params?.timestamp;
