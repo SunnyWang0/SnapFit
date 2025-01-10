@@ -6,9 +6,7 @@ GET /photos/{userId}?type=thumbnail&limit=20
 // Get multiple original photos
 GET /photos/{userId}?type=original&limit=20
 
-For individual photos:
-// Fetch thumbnail
-GET /photo/{thumbnailKey}?type=thumbnail
-
-// Fetch original when viewing full screen
-GET /photo/{originalKey}?type=original
+Individual Photo Access:
+// Get specific photo (more secure)
+GET /photos/{userId}/{timestamp}/thumbnail
+GET /photos/{userId}/{timestamp}/original
