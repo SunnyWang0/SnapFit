@@ -1,1 +1,1 @@
-- Build out the backend for photo
+- Build out the backend for photo analysis
