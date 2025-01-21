@@ -2,4 +2,4 @@
     - Use Gemini for now for free for testing
     - Switch to GPT (better accuracy) later
 - Build out frontend for the app
-    - Make a little more 
+    - Make a little more aesthetic
