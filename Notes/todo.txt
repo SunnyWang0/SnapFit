@@ -1,1 +1,3 @@
 - Build out the backend for photo analysis
+    - Use Gemini for now for free
+    - Switch to GPT later
