@@ -236,6 +236,15 @@ struct SettingsView: View {
     @AppStorage("heightUnit") private var heightUnit = "cm" // cm or ft
     @AppStorage("weightUnit") private var weightUnit = "kg" // kg or lbs
     
+    @State private var isHeightPickerShown = false
+    @State private var isWeightPickerShown = false
+    @State private var isAgePickerShown = false
+    
+    // Temporary values for pickers
+    @State private var tempHeight = 170.0
+    @State private var tempWeight = 70.0
+    @State private var tempAge = 25.0
+    
     // Computed properties for unit conversion
     private var displayedHeight: Double {
         heightUnit == "cm" ? userHeight : (userHeight / 2.54) / 12
@@ -245,88 +254,203 @@ struct SettingsView: View {
         weightUnit == "kg" ? userWeight : userWeight * 2.20462
     }
     
+    private var formattedHeight: String {
+        if heightUnit == "cm" {
+            return "\(Int(displayedHeight)) cm"
+        } else {
+            let feet = Int(displayedHeight)
+            let inches = Int((displayedHeight - Double(feet)) * 12)
+            return "\(feet)'\(inches)\""
+        }
+    }
+    
+    private var formattedWeight: String {
+        "\(Int(displayedWeight)) \(weightUnit)"
+    }
+    
     var body: some View {
         NavigationStack {
             Form {
                 Section("Personal Information") {
-                    VStack(alignment: .leading) {
-                        HStack {
-                            Text("Height")
-                            Spacer()
-                            Picker("Unit", selection: $heightUnit) {
-                                Text("cm").tag("cm")
-                                Text("ft").tag("ft")
+                    // Height
+                    HStack {
+                        Button(action: { isHeightPickerShown = true }) {
+                            HStack {
+                                Text("Height")
+                                Spacer()
+                                Text(formattedHeight)
+                                    .foregroundColor(.secondary)
                             }
-                            .pickerStyle(.segmented)
-                            .frame(width: 100)
                         }
-                        
-                        HStack {
-                            if heightUnit == "cm" {
-                                Text("\(Int(displayedHeight)) cm")
-                            } else {
-                                let feet = Int(displayedHeight)
-                                let inches = Int((displayedHeight - Double(feet)) * 12)
-                                Text("\(feet)'\(inches)\"")
+                        .foregroundColor(.primary)
+                    }
+                    .sheet(isPresented: $isHeightPickerShown) {
+                        NavigationStack {
+                            HStack {
+                                if heightUnit == "cm" {
+                                    Picker("Height", selection: $tempHeight) {
+                                        ForEach(120...220, id: \.self) { cm in
+                                            Text("\(cm)").tag(Double(cm))
+                                        }
+                                    }
+                                    .pickerStyle(.wheel)
+                                    Text("cm")
+                                        .foregroundColor(.secondary)
+                                } else {
+                                    Picker("Feet", selection: $tempHeight) {
+                                        ForEach(4...7, id: \.self) { feet in
+                                            ForEach(0...11, id: \.self) { inches in
+                                                Text("\(feet)'\(inches)\"")
+                                                    .tag(Double(feet) + Double(inches) / 12.0)
+                                            }
+                                        }
+                                    }
+                                    .pickerStyle(.wheel)
+                                }
+                                
+                                Picker("Unit", selection: $heightUnit) {
+                                    Text("cm").tag("cm")
+                                    Text("ft").tag("ft")
+                                }
+                                .pickerStyle(.segmented)
+                                .frame(width: 100)
                             }
-                            Spacer()
-                        }
-                        
-                        Slider(
-                            value: Binding(
-                                get: { displayedHeight },
-                                set: { newValue in
-                                    if heightUnit == "cm" {
-                                        userHeight = newValue
-                                    } else {
-                                        userHeight = newValue * 12 * 2.54
+                            .padding()
+                            .navigationTitle("Height")
+                            .navigationBarTitleDisplayMode(.inline)
+                            .toolbar {
+                                ToolbarItem(placement: .cancellationAction) {
+                                    Button("Cancel") {
+                                        isHeightPickerShown = false
                                     }
                                 }
-                            ),
-                            in: heightUnit == "cm" ? 120...220 : 4...7.5,
-                            step: heightUnit == "cm" ? 1 : 0.1
-                        )
-                    }
-                    
-                    VStack(alignment: .leading) {
-                        HStack {
-                            Text("Weight")
-                            Spacer()
-                            Picker("Unit", selection: $weightUnit) {
-                                Text("kg").tag("kg")
-                                Text("lbs").tag("lbs")
-                            }
-                            .pickerStyle(.segmented)
-                            .frame(width: 100)
-                        }
-                        
-                        HStack {
-                            Text("\(Int(displayedWeight)) \(weightUnit)")
-                            Spacer()
-                        }
-                        
-                        Slider(
-                            value: Binding(
-                                get: { displayedWeight },
-                                set: { newValue in
-                                    if weightUnit == "kg" {
-                                        userWeight = newValue
-                                    } else {
-                                        userWeight = newValue / 2.20462
+                                ToolbarItem(placement: .confirmationAction) {
+                                    Button("Done") {
+                                        if heightUnit == "cm" {
+                                            userHeight = tempHeight
+                                        } else {
+                                            userHeight = tempHeight * 12 * 2.54
+                                        }
+                                        isHeightPickerShown = false
                                     }
                                 }
-                            ),
-                            in: weightUnit == "kg" ? 30...200 : 66...440,
-                            step: weightUnit == "kg" ? 1 : 1
-                        )
+                            }
+                            .onAppear {
+                                tempHeight = displayedHeight
+                            }
+                        }
+                        .presentationDetents([.height(300)])
                     }
                     
-                    VStack(alignment: .leading) {
-                        HStack {
-                            Text("Age: \(Int(userAge))")
-                            Spacer()
+                    // Weight
+                    HStack {
+                        Button(action: { isWeightPickerShown = true }) {
+                            HStack {
+                                Text("Weight")
+                                Spacer()
+                                Text(formattedWeight)
+                                    .foregroundColor(.secondary)
+                            }
                         }
-                        Slider(value: $userAge, in: 18...100, step: 1)
+                        .foregroundColor(.primary)
+                    }
+                    .sheet(isPresented: $isWeightPickerShown) {
+                        NavigationStack {
+                            HStack {
+                                if weightUnit == "kg" {
+                                    Picker("Weight", selection: $tempWeight) {
+                                        ForEach(30...200, id: \.self) { kg in
+                                            Text("\(kg)").tag(Double(kg))
+                                        }
+                                    }
+                                    .pickerStyle(.wheel)
+                                    Text("kg")
+                                        .foregroundColor(.secondary)
+                                } else {
+                                    Picker("Weight", selection: $tempWeight) {
+                                        ForEach(66...440, id: \.self) { lbs in
+                                            Text("\(lbs)").tag(Double(lbs))
+                                        }
+                                    }
+                                    .pickerStyle(.wheel)
+                                    Text("lbs")
+                                        .foregroundColor(.secondary)
+                                }
+                                
+                                Picker("Unit", selection: $weightUnit) {
+                                    Text("kg").tag("kg")
+                                    Text("lbs").tag("lbs")
+                                }
+                                .pickerStyle(.segmented)
+                                .frame(width: 100)
+                            }
+                            .padding()
+                            .navigationTitle("Weight")
+                            .navigationBarTitleDisplayMode(.inline)
+                            .toolbar {
+                                ToolbarItem(placement: .cancellationAction) {
+                                    Button("Cancel") {
+                                        isWeightPickerShown = false
+                                    }
+                                }
+                                ToolbarItem(placement: .confirmationAction) {
+                                    Button("Done") {
+                                        if weightUnit == "kg" {
+                                            userWeight = tempWeight
+                                        } else {
+                                            userWeight = tempWeight / 2.20462
+                                        }
+                                        isWeightPickerShown = false
+                                    }
+                                }
+                            }
+                            .onAppear {
+                                tempWeight = displayedWeight
+                            }
+                        }
+                        .presentationDetents([.height(300)])
+                    }
+                    
+                    // Age
+                    HStack {
+                        Button(action: { isAgePickerShown = true }) {
+                            HStack {
+                                Text("Age")
+                                Spacer()
+                                Text("\(Int(userAge))")
+                                    .foregroundColor(.secondary)
+                            }
+                        }
+                        .foregroundColor(.primary)
+                    }
+                    .sheet(isPresented: $isAgePickerShown) {
+                        NavigationStack {
+                            Picker("Age", selection: $tempAge) {
+                                ForEach(18...100, id: \.self) { age in
+                                    Text("\(age)").tag(Double(age))
+                                }
+                            }
+                            .pickerStyle(.wheel)
+                            .navigationTitle("Age")
+                            .navigationBarTitleDisplayMode(.inline)
+                            .toolbar {
+                                ToolbarItem(placement: .cancellationAction) {
+                                    Button("Cancel") {
+                                        isAgePickerShown = false
+                                    }
+                                }
+                                ToolbarItem(placement: .confirmationAction) {
+                                    Button("Done") {
+                                        userAge = tempAge
+                                        isAgePickerShown = false
+                                    }
+                                }
+                            }
+                            .onAppear {
+                                tempAge = userAge
+                            }
+                        }
+                        .presentationDetents([.height(300)])
                     }
                     
                     Picker("Gender", selection: $userGender) {
