@@ -449,12 +449,13 @@ struct SettingsView: View {
                     .sheet(isPresented: $isDateOfBirthPickerShown) {
                         NavigationStack {
                             DatePicker(
-                                "Date of Birth",
+                                "",
                                 selection: $tempDateOfBirth,
                                 in: Calendar.current.date(byAdding: .year, value: -100, to: Date())!...Calendar.current.date(byAdding: .year, value: -13, to: Date())!,
                                 displayedComponents: .date
                             )
                             .datePickerStyle(.wheel)
+                            .labelsHidden()
                             .padding()
                             .navigationTitle("Date of Birth")
                             .navigationBarTitleDisplayMode(.inline)
