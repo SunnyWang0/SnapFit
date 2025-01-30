@@ -461,7 +461,7 @@ struct SettingsView: View {
                             isBirthdayPickerShown = true
                         }) {
                             HStack {
-                                Text("Birthday")
+                                Text("Date of Birth")
                                 Spacer()
                                 Text("\(age) years")
                                     .foregroundColor(.secondary)
@@ -500,7 +500,7 @@ struct SettingsView: View {
                                 .frame(maxWidth: .infinity)
                             }
                             .padding()
-                            .navigationTitle("Birthday")
+                            .navigationTitle("Date of Birth")
                             .navigationBarTitleDisplayMode(.inline)
                             .toolbar {
                                 ToolbarItem(placement: .cancellationAction) {
