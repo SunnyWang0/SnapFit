@@ -229,7 +229,7 @@ struct TipRow: View {
 struct SettingsView: View {
     @AppStorage("userHeight") private var userHeight = 170.0 // Default in cm
     @AppStorage("userWeight") private var userWeight = 70.0 // Default in kg
-    @AppStorage("userAge") private var userAge = 25.0
+    @AppStorage("userBirthday") private var userBirthday = Date() // Default to current date
     @AppStorage("userGender") private var userGender = "male"
     @AppStorage("activityLevel") private var activityLevel = "moderate"
     @AppStorage("showCelebrityComparison") private var showCelebrityComparison = true
@@ -238,13 +238,26 @@ struct SettingsView: View {
     
     @State private var isHeightPickerShown = false
     @State private var isWeightPickerShown = false
-    @State private var isAgePickerShown = false
+    @State private var isBirthdayPickerShown = false
     
     // Temporary values for pickers
     @State private var tempHeight = 170.0
     @State private var tempWeight = 70.0
-    @State private var tempAge = 25.0
+    @State private var tempMonth = Calendar.current.component(.month, from: Date())
+    @State private var tempDay = Calendar.current.component(.day, from: Date())
+    @State private var tempYear = Calendar.current.component(.year, from: Date())
     @State private var previousHeightUnit = "cm"
+    
+    private let months = [
+        "January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December"
+    ]
+    
+    private let calendar = Calendar.current
+    
+    private var age: Int {
+        calendar.dateComponents([.year], from: userBirthday, to: Date()).year ?? 0
+    }
     
     // Computed properties for unit conversion
     private var displayedHeight: Double {
@@ -280,6 +293,15 @@ struct SettingsView: View {
             }
             previousHeightUnit = heightUnit
         }
+    }
+    
+    private func daysInMonth(month: Int, year: Int) -> Int {
+        let dateComponents = DateComponents(year: year, month: month)
+        guard let date = calendar.date(from: dateComponents),
+              let range = calendar.range(of: .day, in: .month, for: date) else {
+            return 31
+        }
+        return range.count
     }
     
     var body: some View {
@@ -429,43 +451,88 @@ struct SettingsView: View {
                         .presentationDetents([.height(300)])
                     }
                     
-                    // Age
+                    // Birthday
                     HStack {
-                        Button(action: { isAgePickerShown = true }) {
+                        Button(action: {
+                            let components = calendar.dateComponents([.month, .day, .year], from: userBirthday)
+                            tempMonth = components.month ?? 1
+                            tempDay = components.day ?? 1
+                            tempYear = components.year ?? calendar.component(.year, from: Date())
+                            isBirthdayPickerShown = true
+                        }) {
                             HStack {
-                                Text("Age")
+                                Text("Birthday")
                                 Spacer()
-                                Text("\(Int(userAge))")
+                                Text("\(age) years")
                                     .foregroundColor(.secondary)
                             }
                         }
                         .foregroundColor(.primary)
                     }
-                    .sheet(isPresented: $isAgePickerShown) {
+                    .sheet(isPresented: $isBirthdayPickerShown) {
                         NavigationStack {
-                            Picker("Age", selection: $tempAge) {
-                                ForEach(18...100, id: \.self) { age in
-                                    Text("\(age)").tag(Double(age))
+                            HStack(spacing: 0) {
+                                // Month Picker
+                                Picker("Month", selection: $tempMonth) {
+                                    ForEach(1...12, id: \.self) { month in
+                                        Text(months[month - 1]).tag(month)
+                                    }
                                 }
+                                .pickerStyle(.wheel)
+                                .frame(maxWidth: .infinity)
+                                
+                                // Day Picker
+                                Picker("Day", selection: $tempDay) {
+                                    ForEach(1...daysInMonth(month: tempMonth, year: tempYear), id: \.self) { day in
+                                        Text("\(day)").tag(day)
+                                    }
+                                }
+                                .pickerStyle(.wheel)
+                                .frame(maxWidth: .infinity)
+                                
+                                // Year Picker
+                                Picker("Year", selection: $tempYear) {
+                                    ForEach((1900...calendar.component(.year, from: Date())).reversed(), id: \.self) { year in
+                                        Text("\(year)").tag(year)
+                                    }
+                                }
+                                .pickerStyle(.wheel)
+                                .frame(maxWidth: .infinity)
                             }
-                            .pickerStyle(.wheel)
-                            .navigationTitle("Age")
+                            .padding()
+                            .navigationTitle("Birthday")
                             .navigationBarTitleDisplayMode(.inline)
                             .toolbar {
                                 ToolbarItem(placement: .cancellationAction) {
                                     Button("Cancel") {
-                                        isAgePickerShown = false
+                                        isBirthdayPickerShown = false
                                     }
                                 }
                                 ToolbarItem(placement: .confirmationAction) {
                                     Button("Done") {
-                                        userAge = tempAge
-                                        isAgePickerShown = false
+                                        var dateComponents = DateComponents()
+                                        dateComponents.year = tempYear
+                                        dateComponents.month = tempMonth
+                                        dateComponents.day = min(tempDay, daysInMonth(month: tempMonth, year: tempYear))
+                                        
+                                        if let date = calendar.date(from: dateComponents) {
+                                            userBirthday = date
+                                        }
+                                        isBirthdayPickerShown = false
                                     }
                                 }
                             }
-                            .onAppear {
-                                tempAge = userAge
+                            .onChange(of: tempMonth) { _, _ in
+                                let maxDays = daysInMonth(month: tempMonth, year: tempYear)
+                                if tempDay > maxDays {
+                                    tempDay = maxDays
+                                }
+                            }
+                            .onChange(of: tempYear) { _, _ in
+                                let maxDays = daysInMonth(month: tempMonth, year: tempYear)
+                                if tempDay > maxDays {
+                                    tempDay = maxDays
+                                }
                             }
                         }
                         .presentationDetents([.height(300)])
