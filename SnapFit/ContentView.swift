@@ -226,175 +226,56 @@ struct TipRow: View {
     }
 }
 
-struct HeightPicker: View {
-    @Binding var heightCm: Double
-    @Binding var unit: String
-    @State private var feet: Int = 5
-    @State private var inches: Int = 8
-    
-    var body: some View {
-        HStack {
-            if unit == "cm" {
-                Picker("Height", selection: $heightCm) {
-                    ForEach(60...220, id: \.self) { cm in
-                        Text("\(cm)").tag(Double(cm))
-                    }
-                }
-                .pickerStyle(.wheel)
-                Text("cm")
-                    .foregroundColor(.secondary)
-            } else {
-                HStack(spacing: 0) {
-                    // Feet picker
-                    Picker("Feet", selection: $feet) {
-                        ForEach(2...7, id: \.self) { feet in
-                            Text("\(feet)").tag(feet)
-                        }
-                    }
-                    .pickerStyle(.wheel)
-                    
-                    Text("'")
-                        .foregroundColor(.secondary)
-                    
-                    // Inches picker
-                    Picker("Inches", selection: $inches) {
-                        ForEach(0...11, id: \.self) { inches in
-                            Text("\(inches)").tag(inches)
-                        }
-                    }
-                    .pickerStyle(.wheel)
-                    
-                    Text("\"")
-                        .foregroundColor(.secondary)
-                }
-            }
-            
-            Picker("Unit", selection: $unit) {
-                Text("cm").tag("cm")
-                Text("ft").tag("ft")
-            }
-            .pickerStyle(.segmented)
-            .frame(width: 100)
-            .onChange(of: unit) { _, newUnit in
-                if newUnit == "cm" {
-                    // Convert feet and inches to cm
-                    heightCm = Double((feet * 12 + inches) * 2.54)
-                } else {
-                    // Convert cm to feet and inches
-                    let totalInches = Int(heightCm / 2.54)
-                    feet = totalInches / 12
-                    inches = totalInches % 12
-                }
-            }
-        }
-        .onAppear {
-            if unit == "ft" {
-                let totalInches = Int(heightCm / 2.54)
-                feet = totalInches / 12
-                inches = totalInches % 12
-            }
-        }
-    }
-}
-
-// Create a separate view for the weight picker
-struct WeightPicker: View {
-    @Binding var weight: Double
-    @Binding var unit: String
-    
-    var body: some View {
-        HStack {
-            if unit == "kg" {
-                Picker("Weight", selection: $weight) {
-                    ForEach(30...200, id: \.self) { kg in
-                        Text("\(kg)").tag(Double(kg))
-                    }
-                }
-                .pickerStyle(.wheel)
-                Text("kg")
-                    .foregroundColor(.secondary)
-            } else {
-                Picker("Weight", selection: $weight) {
-                    ForEach(66...440, id: \.self) { lbs in
-                        Text("\(lbs)").tag(Double(lbs / 2.20462))
-                    }
-                }
-                .pickerStyle(.wheel)
-                Text("lbs")
-                    .foregroundColor(.secondary)
-            }
-            
-            Picker("Unit", selection: $unit) {
-                Text("kg").tag("kg")
-                Text("lbs").tag("lbs")
-            }
-            .pickerStyle(.segmented)
-            .frame(width: 100)
-        }
-    }
-}
-
 struct SettingsView: View {
-    @AppStorage("userHeight") private var userHeight = 170.0 // Always stored in cm
-    @AppStorage("userWeight") private var userWeight = 70.0 // Always stored in kg
-    @AppStorage("userBirthday") private var userBirthday = Date()
+    @AppStorage("userHeight") private var userHeight = 170.0 // Default in cm
+    @AppStorage("userWeight") private var userWeight = 70.0 // Default in kg
+    @AppStorage("userAge") private var userAge = 25.0
     @AppStorage("userGender") private var userGender = "male"
     @AppStorage("activityLevel") private var activityLevel = "moderate"
     @AppStorage("showCelebrityComparison") private var showCelebrityComparison = true
-    @AppStorage("heightUnit") private var heightUnit = "cm"
-    @AppStorage("weightUnit") private var weightUnit = "kg"
+    @AppStorage("heightUnit") private var heightUnit = "cm" // cm or ft
+    @AppStorage("weightUnit") private var weightUnit = "kg" // kg or lbs
     
     @State private var isHeightPickerShown = false
     @State private var isWeightPickerShown = false
-    @State private var isBirthdayPickerShown = false
+    @State private var isAgePickerShown = false
     
     // Temporary values for pickers
     @State private var tempHeight = 170.0
     @State private var tempWeight = 70.0
-    @State private var tempMonth = Calendar.current.component(.month, from: Date())
-    @State private var tempDay = Calendar.current.component(.day, from: Date())
-    @State private var tempYear = Calendar.current.component(.year, from: Date())
+    @State private var tempAge = 25.0
     
-    private let months = [
-        "January", "February", "March", "April", "May", "June",
-        "July", "August", "September", "October", "November", "December"
-    ]
+    // Computed properties for unit conversion
+    private var displayedHeight: Double {
+        if heightUnit == "cm" {
+            return userHeight
+        } else {
+            // Convert cm to feet (including fractional feet)
+            return userHeight / 2.54 / 12
+        }
+    }
     
-    private let calendar = Calendar.current
-    
-    private var formattedBirthday: String {
-        let formatter = DateFormatter()
-        formatter.dateStyle = .medium
-        formatter.timeStyle = .none
-        return formatter.string(from: userBirthday)
+    private var displayedWeight: Double {
+        weightUnit == "kg" ? userWeight : userWeight * 2.20462
     }
     
     private var formattedHeight: String {
         if heightUnit == "cm" {
-            return "\(Int(userHeight)) cm"
+            return "\(Int(displayedHeight)) cm"
         } else {
-            let totalInches = Int(userHeight / 2.54)
-            let feet = totalInches / 12
-            let inches = totalInches % 12
+            let totalInches = (userHeight / 2.54)
+            let feet = Int(totalInches / 12)
+            let inches = Int(round(totalInches.truncatingRemainder(dividingBy: 12)))
+            // Handle case where inches == 12
+            if inches == 12 {
+                return "\(feet + 1)'0\""
+            }
             return "\(feet)'\(inches)\""
         }
     }
     
     private var formattedWeight: String {
-        if weightUnit == "kg" {
-            return "\(Int(userWeight)) kg"
-        } else {
-            return "\(Int(userWeight * 2.20462)) lbs"
-        }
-    }
-    
-    private func daysInMonth(month: Int, year: Int) -> Int {
-        let dateComponents = DateComponents(year: year, month: month)
-        guard let date = calendar.date(from: dateComponents),
-              let range = calendar.range(of: .day, in: .month, for: date) else {
-            return 31
-        }
-        return range.count
+        "\(Int(displayedWeight)) \(weightUnit)"
     }
     
     var body: some View {
@@ -403,10 +284,7 @@ struct SettingsView: View {
                 Section("Personal Information") {
                     // Height
                     HStack {
-                        Button(action: { 
-                            tempHeight = userHeight
-                            isHeightPickerShown = true 
-                        }) {
+                        Button(action: { isHeightPickerShown = true }) {
                             HStack {
                                 Text("Height")
                                 Spacer()
@@ -418,7 +296,35 @@ struct SettingsView: View {
                     }
                     .sheet(isPresented: $isHeightPickerShown) {
                         NavigationStack {
-                            HeightPicker(heightCm: $tempHeight, unit: $heightUnit)
+                            HStack {
+                                if heightUnit == "cm" {
+                                    Picker("Height", selection: $tempHeight) {
+                                        ForEach(60...220, id: \.self) { cm in
+                                            Text("\(cm)").tag(Double(cm))
+                                        }
+                                    }
+                                    .pickerStyle(.wheel)
+                                    Text("cm")
+                                        .foregroundColor(.secondary)
+                                } else {
+                                    Picker("Feet", selection: $tempHeight) {
+                                        ForEach(2...7, id: \.self) { feet in
+                                            ForEach(0...11, id: \.self) { inches in
+                                                Text("\(feet)'\(inches)\"")
+                                                    .tag(Double(feet) + Double(inches) / 12.0)
+                                            }
+                                        }
+                                    }
+                                    .pickerStyle(.wheel)
+                                }
+                                
+                                Picker("Unit", selection: $heightUnit) {
+                                    Text("cm").tag("cm")
+                                    Text("ft").tag("ft")
+                                }
+                                .pickerStyle(.segmented)
+                                .frame(width: 100)
+                            }
                             .padding()
                             .navigationTitle("Height")
                             .navigationBarTitleDisplayMode(.inline)
@@ -430,10 +336,22 @@ struct SettingsView: View {
                                 }
                                 ToolbarItem(placement: .confirmationAction) {
                                     Button("Done") {
-                                        userHeight = tempHeight
+                                        if heightUnit == "cm" {
+                                            userHeight = tempHeight
+                                        } else {
+                                            // Convert feet to cm more accurately
+                                            let feet = Int(tempHeight)
+                                            let fractionalFeet = tempHeight - Double(feet)
+                                            let inches = fractionalFeet * 12
+                                            let totalInches = Double(feet * 12) + inches
+                                            userHeight = totalInches * 2.54
+                                        }
                                         isHeightPickerShown = false
                                     }
                                 }
+                            }
+                            .onAppear {
+                                tempHeight = displayedHeight
                             }
                         }
                         .presentationDetents([.height(300)])
@@ -441,10 +359,7 @@ struct SettingsView: View {
                     
                     // Weight
                     HStack {
-                        Button(action: { 
-                            tempWeight = userWeight
-                            isWeightPickerShown = true 
-                        }) {
+                        Button(action: { isWeightPickerShown = true }) {
                             HStack {
                                 Text("Weight")
                                 Spacer()
@@ -456,109 +371,98 @@ struct SettingsView: View {
                     }
                     .sheet(isPresented: $isWeightPickerShown) {
                         NavigationStack {
-                            WeightPicker(weight: $tempWeight, unit: $weightUnit)
-                                .padding()
-                                .navigationTitle("Weight")
-                                .navigationBarTitleDisplayMode(.inline)
-                                .toolbar {
-                                    ToolbarItem(placement: .cancellationAction) {
-                                        Button("Cancel") {
-                                            isWeightPickerShown = false
+                            HStack {
+                                if weightUnit == "kg" {
+                                    Picker("Weight", selection: $tempWeight) {
+                                        ForEach(30...200, id: \.self) { kg in
+                                            Text("\(kg)").tag(Double(kg))
                                         }
                                     }
-                                    ToolbarItem(placement: .confirmationAction) {
-                                        Button("Done") {
-                                            userWeight = tempWeight
-                                            isWeightPickerShown = false
+                                    .pickerStyle(.wheel)
+                                    Text("kg")
+                                        .foregroundColor(.secondary)
+                                } else {
+                                    Picker("Weight", selection: $tempWeight) {
+                                        ForEach(66...440, id: \.self) { lbs in
+                                            Text("\(lbs)").tag(Double(lbs))
                                         }
+                                    }
+                                    .pickerStyle(.wheel)
+                                    Text("lbs")
+                                        .foregroundColor(.secondary)
+                                }
+                                
+                                Picker("Unit", selection: $weightUnit) {
+                                    Text("kg").tag("kg")
+                                    Text("lbs").tag("lbs")
+                                }
+                                .pickerStyle(.segmented)
+                                .frame(width: 100)
+                            }
+                            .padding()
+                            .navigationTitle("Weight")
+                            .navigationBarTitleDisplayMode(.inline)
+                            .toolbar {
+                                ToolbarItem(placement: .cancellationAction) {
+                                    Button("Cancel") {
+                                        isWeightPickerShown = false
                                     }
                                 }
+                                ToolbarItem(placement: .confirmationAction) {
+                                    Button("Done") {
+                                        if weightUnit == "kg" {
+                                            userWeight = tempWeight
+                                        } else {
+                                            userWeight = tempWeight / 2.20462
+                                        }
+                                        isWeightPickerShown = false
+                                    }
+                                }
+                            }
+                            .onAppear {
+                                tempWeight = displayedWeight
+                            }
                         }
                         .presentationDetents([.height(300)])
                     }
                     
-                    // Birthday
+                    // Age
                     HStack {
-                        Button(action: {
-                            let components = calendar.dateComponents([.month, .day, .year], from: userBirthday)
-                            tempMonth = components.month ?? 1
-                            tempDay = components.day ?? 1
-                            tempYear = components.year ?? calendar.component(.year, from: Date())
-                            isBirthdayPickerShown = true
-                        }) {
+                        Button(action: { isAgePickerShown = true }) {
                             HStack {
-                                Text("Date of Birth")
+                                Text("Age")
                                 Spacer()
-                                Text(formattedBirthday)
+                                Text("\(Int(userAge))")
                                     .foregroundColor(.secondary)
                             }
                         }
                         .foregroundColor(.primary)
                     }
-                    .sheet(isPresented: $isBirthdayPickerShown) {
+                    .sheet(isPresented: $isAgePickerShown) {
                         NavigationStack {
-                            HStack(spacing: 0) {
-                                // Month Picker
-                                Picker("Month", selection: $tempMonth) {
-                                    ForEach(1...12, id: \.self) { month in
-                                        Text(months[month - 1]).tag(month)
-                                    }
+                            Picker("Age", selection: $tempAge) {
+                                ForEach(18...100, id: \.self) { age in
+                                    Text("\(age)").tag(Double(age))
                                 }
-                                .pickerStyle(.wheel)
-                                .frame(maxWidth: .infinity)
-                                
-                                // Day Picker
-                                Picker("Day", selection: $tempDay) {
-                                    ForEach(1...daysInMonth(month: tempMonth, year: tempYear), id: \.self) { day in
-                                        Text("\(day)").tag(day)
-                                    }
-                                }
-                                .pickerStyle(.wheel)
-                                .frame(maxWidth: .infinity)
-                                
-                                // Year Picker
-                                Picker("Year", selection: $tempYear) {
-                                    ForEach((1900...calendar.component(.year, from: Date())).reversed(), id: \.self) { year in
-                                        Text(String(format: "%d", year)).tag(year)
-                                    }
-                                }
-                                .pickerStyle(.wheel)
-                                .frame(maxWidth: .infinity)
                             }
-                            .padding()
-                            .navigationTitle("Date of Birth")
+                            .pickerStyle(.wheel)
+                            .navigationTitle("Age")
                             .navigationBarTitleDisplayMode(.inline)
-                            .toolbar(content: {
+                            .toolbar {
                                 ToolbarItem(placement: .cancellationAction) {
                                     Button("Cancel") {
-                                        isBirthdayPickerShown = false
+                                        isAgePickerShown = false
                                     }
                                 }
                                 ToolbarItem(placement: .confirmationAction) {
                                     Button("Done") {
-                                        var dateComponents = DateComponents()
-                                        dateComponents.year = tempYear
-                                        dateComponents.month = tempMonth
-                                        dateComponents.day = min(tempDay, daysInMonth(month: tempMonth, year: tempYear))
-                                        
-                                        if let date = calendar.date(from: dateComponents) {
-                                            userBirthday = date
-                                        }
-                                        isBirthdayPickerShown = false
+                                        userAge = tempAge
+                                        isAgePickerShown = false
                                     }
                                 }
-                            })
-                            .onChange(of: tempMonth) { _, _ in
-                                let maxDays = daysInMonth(month: tempMonth, year: tempYear)
-                                if tempDay > maxDays {
-                                    tempDay = maxDays
-                                }
                             }
-                            .onChange(of: tempYear) { _, _ in
-                                let maxDays = daysInMonth(month: tempMonth, year: tempYear)
-                                if tempDay > maxDays {
-                                    tempDay = maxDays
-                                }
+                            .onAppear {
+                                tempAge = userAge
                             }
                         }
                         .presentationDetents([.height(300)])
