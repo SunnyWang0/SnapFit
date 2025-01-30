@@ -229,7 +229,7 @@ struct TipRow: View {
 struct SettingsView: View {
     @AppStorage("userHeight") private var userHeight = 170.0 // Default in cm
     @AppStorage("userWeight") private var userWeight = 70.0 // Default in kg
-    @AppStorage("userAge") private var userAge = 25.0
+    @AppStorage("userDateOfBirth") private var userDateOfBirth = Calendar.current.date(byAdding: .year, value: -25, to: Date()) ?? Date()
     @AppStorage("userGender") private var userGender = "male"
     @AppStorage("activityLevel") private var activityLevel = "moderate"
     @AppStorage("showCelebrityComparison") private var showCelebrityComparison = true
@@ -238,12 +238,20 @@ struct SettingsView: View {
     
     @State private var isHeightPickerShown = false
     @State private var isWeightPickerShown = false
-    @State private var isAgePickerShown = false
+    @State private var isDateOfBirthPickerShown = false
     
     // Temporary values for pickers
     @State private var tempHeight = 170.0
     @State private var tempWeight = 70.0
-    @State private var tempAge = 25.0
+    @State private var tempDateOfBirth = Calendar.current.date(byAdding: .year, value: -25, to: Date()) ?? Date()
+    
+    // Date formatter for displaying birth date
+    private let dateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .none
+        return formatter
+    }()
     
     // Computed properties for unit conversion
     private var displayedHeight: Double {
@@ -426,43 +434,45 @@ struct SettingsView: View {
                         .presentationDetents([.height(300)])
                     }
                     
-                    // Age
+                    // Date of Birth
                     HStack {
-                        Button(action: { isAgePickerShown = true }) {
+                        Button(action: { isDateOfBirthPickerShown = true }) {
                             HStack {
-                                Text("Age")
+                                Text("Date of Birth")
                                 Spacer()
-                                Text("\(Int(userAge))")
+                                Text(dateFormatter.string(from: userDateOfBirth))
                                     .foregroundColor(.secondary)
                             }
                         }
                         .foregroundColor(.primary)
                     }
-                    .sheet(isPresented: $isAgePickerShown) {
+                    .sheet(isPresented: $isDateOfBirthPickerShown) {
                         NavigationStack {
-                            Picker("Age", selection: $tempAge) {
-                                ForEach(18...100, id: \.self) { age in
-                                    Text("\(age)").tag(Double(age))
-                                }
-                            }
-                            .pickerStyle(.wheel)
-                            .navigationTitle("Age")
+                            DatePicker(
+                                "Date of Birth",
+                                selection: $tempDateOfBirth,
+                                in: Calendar.current.date(byAdding: .year, value: -100, to: Date())!...Calendar.current.date(byAdding: .year, value: -13, to: Date())!,
+                                displayedComponents: .date
+                            )
+                            .datePickerStyle(.wheel)
+                            .padding()
+                            .navigationTitle("Date of Birth")
                             .navigationBarTitleDisplayMode(.inline)
                             .toolbar {
                                 ToolbarItem(placement: .cancellationAction) {
                                     Button("Cancel") {
-                                        isAgePickerShown = false
+                                        isDateOfBirthPickerShown = false
                                     }
                                 }
                                 ToolbarItem(placement: .confirmationAction) {
                                     Button("Done") {
-                                        userAge = tempAge
-                                        isAgePickerShown = false
+                                        userDateOfBirth = tempDateOfBirth
+                                        isDateOfBirthPickerShown = false
                                     }
                                 }
                             }
                             .onAppear {
-                                tempAge = userAge
+                                tempDateOfBirth = userDateOfBirth
                             }
                         }
                         .presentationDetents([.height(300)])
