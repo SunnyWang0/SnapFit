@@ -227,23 +227,108 @@ struct TipRow: View {
 }
 
 struct SettingsView: View {
-    @AppStorage("userHeight") private var userHeight = ""
-    @AppStorage("userWeight") private var userWeight = ""
-    @AppStorage("userAge") private var userAge = ""
+    @AppStorage("userHeight") private var userHeight = 170.0 // Default in cm
+    @AppStorage("userWeight") private var userWeight = 70.0 // Default in kg
+    @AppStorage("userAge") private var userAge = 25.0
     @AppStorage("userGender") private var userGender = "male"
     @AppStorage("activityLevel") private var activityLevel = "moderate"
     @AppStorage("showCelebrityComparison") private var showCelebrityComparison = true
+    @AppStorage("heightUnit") private var heightUnit = "cm" // cm or ft
+    @AppStorage("weightUnit") private var weightUnit = "kg" // kg or lbs
+    
+    // Computed properties for unit conversion
+    private var displayedHeight: Double {
+        heightUnit == "cm" ? userHeight : (userHeight / 2.54) / 12
+    }
+    
+    private var displayedWeight: Double {
+        weightUnit == "kg" ? userWeight : userWeight * 2.20462
+    }
     
     var body: some View {
         NavigationStack {
             Form {
                 Section("Personal Information") {
-                    TextField("Height", text: $userHeight)
-                        .keyboardType(.decimalPad)
-                    TextField("Weight", text: $userWeight)
-                        .keyboardType(.decimalPad)
-                    TextField("Age", text: $userAge)
-                        .keyboardType(.numberPad)
+                    VStack(alignment: .leading) {
+                        HStack {
+                            Text("Height")
+                            Spacer()
+                            Picker("Unit", selection: $heightUnit) {
+                                Text("cm").tag("cm")
+                                Text("ft").tag("ft")
+                            }
+                            .pickerStyle(.segmented)
+                            .frame(width: 100)
+                        }
+                        
+                        HStack {
+                            if heightUnit == "cm" {
+                                Text("\(Int(displayedHeight)) cm")
+                            } else {
+                                let feet = Int(displayedHeight)
+                                let inches = Int((displayedHeight - Double(feet)) * 12)
+                                Text("\(feet)'\(inches)\"")
+                            }
+                            Spacer()
+                        }
+                        
+                        Slider(
+                            value: Binding(
+                                get: { displayedHeight },
+                                set: { newValue in
+                                    if heightUnit == "cm" {
+                                        userHeight = newValue
+                                    } else {
+                                        userHeight = newValue * 12 * 2.54
+                                    }
+                                }
+                            ),
+                            in: heightUnit == "cm" ? 120...220 : 4...7.5,
+                            step: heightUnit == "cm" ? 1 : 0.1
+                        )
+                    }
+                    
+                    VStack(alignment: .leading) {
+                        HStack {
+                            Text("Weight")
+                            Spacer()
+                            Picker("Unit", selection: $weightUnit) {
+                                Text("kg").tag("kg")
+                                Text("lbs").tag("lbs")
+                            }
+                            .pickerStyle(.segmented)
+                            .frame(width: 100)
+                        }
+                        
+                        HStack {
+                            Text("\(Int(displayedWeight)) \(weightUnit)")
+                            Spacer()
+                        }
+                        
+                        Slider(
+                            value: Binding(
+                                get: { displayedWeight },
+                                set: { newValue in
+                                    if weightUnit == "kg" {
+                                        userWeight = newValue
+                                    } else {
+                                        userWeight = newValue / 2.20462
+                                    }
+                                }
+                            ),
+                            in: weightUnit == "kg" ? 30...200 : 66...440,
+                            step: weightUnit == "kg" ? 1 : 1
+                        )
+                    }
+                    
+                    VStack(alignment: .leading) {
+                        HStack {
+                            Text("Age: \(Int(userAge))")
+                            Spacer()
+                        }
+                        Slider(value: $userAge, in: 18...100, step: 1)
+                    }
+                    
                     Picker("Gender", selection: $userGender) {
                         Text("Male").tag("male")
                         Text("Female").tag("female")
