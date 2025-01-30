@@ -226,15 +226,86 @@ struct TipRow: View {
     }
 }
 
+struct HeightPicker: View {
+    @Binding var heightCm: Double
+    @Binding var unit: String
+    @State private var feet: Int = 5
+    @State private var inches: Int = 8
+    
+    var body: some View {
+        HStack {
+            if unit == "cm" {
+                Picker("Height", selection: $heightCm) {
+                    ForEach(60...220, id: \.self) { cm in
+                        Text("\(cm)").tag(Double(cm))
+                    }
+                }
+                .pickerStyle(.wheel)
+                Text("cm")
+                    .foregroundColor(.secondary)
+            } else {
+                HStack(spacing: 0) {
+                    // Feet picker
+                    Picker("Feet", selection: $feet) {
+                        ForEach(2...7, id: \.self) { feet in
+                            Text("\(feet)").tag(feet)
+                        }
+                    }
+                    .pickerStyle(.wheel)
+                    
+                    Text("'")
+                        .foregroundColor(.secondary)
+                    
+                    // Inches picker
+                    Picker("Inches", selection: $inches) {
+                        ForEach(0...11, id: \.self) { inches in
+                            Text("\(inches)").tag(inches)
+                        }
+                    }
+                    .pickerStyle(.wheel)
+                    
+                    Text("\"")
+                        .foregroundColor(.secondary)
+                }
+            }
+            
+            Picker("Unit", selection: $unit) {
+                Text("cm").tag("cm")
+                Text("ft").tag("ft")
+            }
+            .pickerStyle(.segmented)
+            .frame(width: 100)
+            .onChange(of: unit) { _, newUnit in
+                if newUnit == "cm" {
+                    // Convert feet and inches to cm
+                    heightCm = Double((feet * 12 + inches) * 2.54)
+                } else {
+                    // Convert cm to feet and inches
+                    let totalInches = Int(heightCm / 2.54)
+                    feet = totalInches / 12
+                    inches = totalInches % 12
+                }
+            }
+        }
+        .onAppear {
+            if unit == "ft" {
+                let totalInches = Int(heightCm / 2.54)
+                feet = totalInches / 12
+                inches = totalInches % 12
+            }
+        }
+    }
+}
+
 struct SettingsView: View {
-    @AppStorage("userHeight") private var userHeight = 170.0 // Default in cm
-    @AppStorage("userWeight") private var userWeight = 70.0 // Default in kg
-    @AppStorage("userBirthday") private var userBirthday = Date() // Default to current date
+    @AppStorage("userHeight") private var userHeight = 170.0 // Always stored in cm
+    @AppStorage("userWeight") private var userWeight = 70.0 // Always stored in kg
+    @AppStorage("userBirthday") private var userBirthday = Date()
     @AppStorage("userGender") private var userGender = "male"
     @AppStorage("activityLevel") private var activityLevel = "moderate"
     @AppStorage("showCelebrityComparison") private var showCelebrityComparison = true
-    @AppStorage("heightUnit") private var heightUnit = "cm" // cm or ft
-    @AppStorage("weightUnit") private var weightUnit = "kg" // kg or lbs
+    @AppStorage("heightUnit") private var heightUnit = "cm"
+    @AppStorage("weightUnit") private var weightUnit = "kg"
     
     @State private var isHeightPickerShown = false
     @State private var isWeightPickerShown = false
@@ -265,8 +336,9 @@ struct SettingsView: View {
         if heightUnit == "cm" {
             return "\(Int(userHeight)) cm"
         } else {
-            let feet = Int(userHeight / 30.48) // Convert cm to feet
-            let inches = Int((userHeight - Double(feet) * 30.48) / 2.54)
+            let totalInches = Int(userHeight / 2.54)
+            let feet = totalInches / 12
+            let inches = totalInches % 12
             return "\(feet)'\(inches)\""
         }
     }
@@ -309,38 +381,7 @@ struct SettingsView: View {
                     }
                     .sheet(isPresented: $isHeightPickerShown) {
                         NavigationStack {
-                            HStack {
-                                if heightUnit == "cm" {
-                                    Picker("Height", selection: $tempHeight) {
-                                        ForEach(60...220, id: \.self) { cm in
-                                            Text("\(cm)").tag(Double(cm))
-                                        }
-                                    }
-                                    .pickerStyle(.wheel)
-                                    Text("cm")
-                                        .foregroundColor(.secondary)
-                                } else {
-                                    let feetRange = 2...7
-                                    let inchesRange = 0...11
-                                    
-                                    Picker("Height", selection: $tempHeight) {
-                                        ForEach(feetRange, id: \.self) { feet in
-                                            ForEach(inchesRange, id: \.self) { inches in
-                                                Text("\(feet)'\(inches)\"")
-                                                    .tag(Double(feet * 30.48 + inches * 2.54))
-                                            }
-                                        }
-                                    }
-                                    .pickerStyle(.wheel)
-                                }
-                                
-                                Picker("Unit", selection: $heightUnit) {
-                                    Text("cm").tag("cm")
-                                    Text("ft").tag("ft")
-                                }
-                                .pickerStyle(.segmented)
-                                .frame(width: 100)
-                            }
+                            HeightPicker(heightCm: $tempHeight, unit: $heightUnit)
                             .padding()
                             .navigationTitle("Height")
                             .navigationBarTitleDisplayMode(.inline)
