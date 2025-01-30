@@ -244,6 +244,7 @@ struct SettingsView: View {
     @State private var tempHeight = 170.0
     @State private var tempWeight = 70.0
     @State private var tempAge = 25.0
+    @State private var previousHeightUnit = "cm"
     
     // Computed properties for unit conversion
     private var displayedHeight: Double {
@@ -268,13 +269,30 @@ struct SettingsView: View {
         "\(Int(displayedWeight)) \(weightUnit)"
     }
     
+    private func convertHeight() {
+        if previousHeightUnit != heightUnit {
+            if heightUnit == "cm" {
+                // Convert from feet to cm
+                tempHeight = tempHeight * 12 * 2.54
+            } else {
+                // Convert from cm to feet
+                tempHeight = tempHeight / 2.54 / 12
+            }
+            previousHeightUnit = heightUnit
+        }
+    }
+    
     var body: some View {
         NavigationStack {
             Form {
                 Section("Personal Information") {
                     // Height
                     HStack {
-                        Button(action: { isHeightPickerShown = true }) {
+                        Button(action: { 
+                            tempHeight = displayedHeight
+                            previousHeightUnit = heightUnit
+                            isHeightPickerShown = true 
+                        }) {
                             HStack {
                                 Text("Height")
                                 Spacer()
@@ -289,7 +307,7 @@ struct SettingsView: View {
                             HStack {
                                 if heightUnit == "cm" {
                                     Picker("Height", selection: $tempHeight) {
-                                        ForEach(120...220, id: \.self) { cm in
+                                        ForEach(60...220, id: \.self) { cm in
                                             Text("\(cm)").tag(Double(cm))
                                         }
                                     }
@@ -298,7 +316,7 @@ struct SettingsView: View {
                                         .foregroundColor(.secondary)
                                 } else {
                                     Picker("Feet", selection: $tempHeight) {
-                                        ForEach(4...7, id: \.self) { feet in
+                                        ForEach(2...7, id: \.self) { feet in
                                             ForEach(0...11, id: \.self) { inches in
                                                 Text("\(feet)'\(inches)\"")
                                                     .tag(Double(feet) + Double(inches) / 12.0)
@@ -314,6 +332,9 @@ struct SettingsView: View {
                                 }
                                 .pickerStyle(.segmented)
                                 .frame(width: 100)
+                                .onChange(of: heightUnit) { _, _ in
+                                    convertHeight()
+                                }
                             }
                             .padding()
                             .navigationTitle("Height")
@@ -334,9 +355,6 @@ struct SettingsView: View {
                                         isHeightPickerShown = false
                                     }
                                 }
-                            }
-                            .onAppear {
-                                tempHeight = displayedHeight
                             }
                         }
                         .presentationDetents([.height(300)])
