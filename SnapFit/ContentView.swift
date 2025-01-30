@@ -246,7 +246,6 @@ struct SettingsView: View {
     @State private var tempMonth = Calendar.current.component(.month, from: Date())
     @State private var tempDay = Calendar.current.component(.day, from: Date())
     @State private var tempYear = Calendar.current.component(.year, from: Date())
-    @State private var previousHeightUnit = "cm"
     
     private let months = [
         "January", "February", "March", "April", "May", "June",
@@ -255,10 +254,6 @@ struct SettingsView: View {
     
     private let calendar = Calendar.current
     
-    private var age: Int {
-        calendar.dateComponents([.year], from: userBirthday, to: Date()).year ?? 0
-    }
-    
     private var formattedBirthday: String {
         let formatter = DateFormatter()
         formatter.dateStyle = .medium
@@ -266,39 +261,21 @@ struct SettingsView: View {
         return formatter.string(from: userBirthday)
     }
     
-    // Computed properties for unit conversion
-    private var displayedHeight: Double {
-        heightUnit == "cm" ? userHeight : (userHeight / 2.54) / 12
-    }
-    
-    private var displayedWeight: Double {
-        weightUnit == "kg" ? userWeight : userWeight * 2.20462
-    }
-    
     private var formattedHeight: String {
         if heightUnit == "cm" {
-            return "\(Int(displayedHeight)) cm"
+            return "\(Int(userHeight)) cm"
         } else {
-            let feet = Int(displayedHeight)
-            let inches = Int((displayedHeight - Double(feet)) * 12)
+            let feet = Int(userHeight / 30.48) // Convert cm to feet
+            let inches = Int((userHeight - Double(feet) * 30.48) / 2.54)
             return "\(feet)'\(inches)\""
         }
     }
     
     private var formattedWeight: String {
-        "\(Int(displayedWeight)) \(weightUnit)"
-    }
-    
-    private func convertHeight() {
-        if previousHeightUnit != heightUnit {
-            if heightUnit == "cm" {
-                // Convert from feet to cm
-                tempHeight = tempHeight * 12 * 2.54
-            } else {
-                // Convert from cm to feet
-                tempHeight = tempHeight / 2.54 / 12
-            }
-            previousHeightUnit = heightUnit
+        if weightUnit == "kg" {
+            return "\(Int(userWeight)) kg"
+        } else {
+            return "\(Int(userWeight * 2.20462)) lbs"
         }
     }
     
@@ -318,8 +295,7 @@ struct SettingsView: View {
                     // Height
                     HStack {
                         Button(action: { 
-                            tempHeight = displayedHeight
-                            previousHeightUnit = heightUnit
+                            tempHeight = userHeight
                             isHeightPickerShown = true 
                         }) {
                             HStack {
@@ -344,11 +320,14 @@ struct SettingsView: View {
                                     Text("cm")
                                         .foregroundColor(.secondary)
                                 } else {
-                                    Picker("Feet", selection: $tempHeight) {
-                                        ForEach(2...7, id: \.self) { feet in
-                                            ForEach(0...11, id: \.self) { inches in
+                                    let feetRange = 2...7
+                                    let inchesRange = 0...11
+                                    
+                                    Picker("Height", selection: $tempHeight) {
+                                        ForEach(feetRange, id: \.self) { feet in
+                                            ForEach(inchesRange, id: \.self) { inches in
                                                 Text("\(feet)'\(inches)\"")
-                                                    .tag(Double(feet) + Double(inches) / 12.0)
+                                                    .tag(Double(feet * 30.48 + inches * 2.54))
                                             }
                                         }
                                     }
@@ -361,9 +340,6 @@ struct SettingsView: View {
                                 }
                                 .pickerStyle(.segmented)
                                 .frame(width: 100)
-                                .onChange(of: heightUnit) { _, _ in
-                                    convertHeight()
-                                }
                             }
                             .padding()
                             .navigationTitle("Height")
@@ -376,11 +352,7 @@ struct SettingsView: View {
                                 }
                                 ToolbarItem(placement: .confirmationAction) {
                                     Button("Done") {
-                                        if heightUnit == "cm" {
-                                            userHeight = tempHeight
-                                        } else {
-                                            userHeight = tempHeight * 12 * 2.54
-                                        }
+                                        userHeight = tempHeight
                                         isHeightPickerShown = false
                                     }
                                 }
@@ -391,7 +363,10 @@ struct SettingsView: View {
                     
                     // Weight
                     HStack {
-                        Button(action: { isWeightPickerShown = true }) {
+                        Button(action: { 
+                            tempWeight = userWeight
+                            isWeightPickerShown = true 
+                        }) {
                             HStack {
                                 Text("Weight")
                                 Spacer()
@@ -416,7 +391,7 @@ struct SettingsView: View {
                                 } else {
                                     Picker("Weight", selection: $tempWeight) {
                                         ForEach(66...440, id: \.self) { lbs in
-                                            Text("\(lbs)").tag(Double(lbs))
+                                            Text("\(lbs)").tag(Double(lbs / 2.20462))
                                         }
                                     }
                                     .pickerStyle(.wheel)
@@ -442,17 +417,10 @@ struct SettingsView: View {
                                 }
                                 ToolbarItem(placement: .confirmationAction) {
                                     Button("Done") {
-                                        if weightUnit == "kg" {
-                                            userWeight = tempWeight
-                                        } else {
-                                            userWeight = tempWeight / 2.20462
-                                        }
+                                        userWeight = tempWeight
                                         isWeightPickerShown = false
                                     }
                                 }
-                            }
-                            .onAppear {
-                                tempWeight = displayedWeight
                             }
                         }
                         .presentationDetents([.height(300)])
