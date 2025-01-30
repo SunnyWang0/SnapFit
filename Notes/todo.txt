@@ -5,3 +5,5 @@
     - Make a little more aesthetic
 
 - Revert Notes:
+
+Try to remove mathematical equations, store the hieght and wieght vlaues as well as hieght and weight units
