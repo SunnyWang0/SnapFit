@@ -7,5 +7,6 @@
 - Revert Notes:
 
 Try to remove mathematical equations, store the hieght and wieght vlaues as well as hieght and weight units
+instead of setting age as a vaarialbe, set date of birth as a variable
 display date of birth instead of years
 change bithday text to date of birth
