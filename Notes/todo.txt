@@ -3,9 +3,3 @@
     - Switch to GPT (better accuracy) later
 - Build out frontend for the app
     - Make a little more aesthetic
-
-- Revert Notes:
-
-instead of setting age as a vaarialbe, set date of birth as a variable
-display date of birth instead of years
-change bithday text to date of birth
