@@ -304,18 +304,25 @@ struct SettingsView: View {
                     }
                     .sheet(isPresented: $isHeightPickerShown) {
                         NavigationStack {
-                            HStack {
+                            VStack {
+                                Picker("Unit", selection: $heightUnit) {
+                                    Text("cm").tag("cm")
+                                    Text("ft").tag("ft")
+                                }
+                                .pickerStyle(.segmented)
+                                .frame(width: 100)
+                                .padding(.top)
+                                
                                 if heightUnit == "cm" {
-                                    Picker("Height", selection: $tempHeight) {
+                                    Picker("", selection: $tempHeight) {
                                         ForEach(60...220, id: \.self) { cm in
                                             Text("\(cm)").tag(Double(cm))
                                         }
                                     }
                                     .pickerStyle(.wheel)
-                                    Text("cm")
-                                        .foregroundColor(.secondary)
+                                    .labelsHidden()
                                 } else {
-                                    Picker("Feet", selection: $tempHeight) {
+                                    Picker("", selection: $tempHeight) {
                                         ForEach(2...7, id: \.self) { feet in
                                             ForEach(0...11, id: \.self) { inches in
                                                 Text("\(feet)'\(inches)\"")
@@ -324,14 +331,8 @@ struct SettingsView: View {
                                         }
                                     }
                                     .pickerStyle(.wheel)
+                                    .labelsHidden()
                                 }
-                                
-                                Picker("Unit", selection: $heightUnit) {
-                                    Text("cm").tag("cm")
-                                    Text("ft").tag("ft")
-                                }
-                                .pickerStyle(.segmented)
-                                .frame(width: 100)
                             }
                             .padding()
                             .navigationTitle("Height")
@@ -347,7 +348,6 @@ struct SettingsView: View {
                                         if heightUnit == "cm" {
                                             userHeight = tempHeight
                                         } else {
-                                            // Convert feet to cm more accurately
                                             let feet = Int(tempHeight)
                                             let fractionalFeet = tempHeight - Double(feet)
                                             let inches = fractionalFeet * 12
@@ -379,33 +379,32 @@ struct SettingsView: View {
                     }
                     .sheet(isPresented: $isWeightPickerShown) {
                         NavigationStack {
-                            HStack {
-                                if weightUnit == "kg" {
-                                    Picker("Weight", selection: $tempWeight) {
-                                        ForEach(30...200, id: \.self) { kg in
-                                            Text("\(kg)").tag(Double(kg))
-                                        }
-                                    }
-                                    .pickerStyle(.wheel)
-                                    Text("kg")
-                                        .foregroundColor(.secondary)
-                                } else {
-                                    Picker("Weight", selection: $tempWeight) {
-                                        ForEach(66...440, id: \.self) { lbs in
-                                            Text("\(lbs)").tag(Double(lbs))
-                                        }
-                                    }
-                                    .pickerStyle(.wheel)
-                                    Text("lbs")
-                                        .foregroundColor(.secondary)
-                                }
-                                
+                            VStack {
                                 Picker("Unit", selection: $weightUnit) {
                                     Text("kg").tag("kg")
                                     Text("lbs").tag("lbs")
                                 }
                                 .pickerStyle(.segmented)
                                 .frame(width: 100)
+                                .padding(.top)
+                                
+                                if weightUnit == "kg" {
+                                    Picker("", selection: $tempWeight) {
+                                        ForEach(30...200, id: \.self) { kg in
+                                            Text("\(kg)").tag(Double(kg))
+                                        }
+                                    }
+                                    .pickerStyle(.wheel)
+                                    .labelsHidden()
+                                } else {
+                                    Picker("", selection: $tempWeight) {
+                                        ForEach(66...440, id: \.self) { lbs in
+                                            Text("\(lbs)").tag(Double(lbs))
+                                        }
+                                    }
+                                    .pickerStyle(.wheel)
+                                    .labelsHidden()
+                                }
                             }
                             .padding()
                             .navigationTitle("Weight")
