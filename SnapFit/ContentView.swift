@@ -259,6 +259,13 @@ struct SettingsView: View {
         calendar.dateComponents([.year], from: userBirthday, to: Date()).year ?? 0
     }
     
+    private var formattedBirthday: String {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .none
+        return formatter.string(from: userBirthday)
+    }
+    
     // Computed properties for unit conversion
     private var displayedHeight: Double {
         heightUnit == "cm" ? userHeight : (userHeight / 2.54) / 12
@@ -463,7 +470,7 @@ struct SettingsView: View {
                             HStack {
                                 Text("Date of Birth")
                                 Spacer()
-                                Text("\(age) years")
+                                Text(formattedBirthday)
                                     .foregroundColor(.secondary)
                             }
                         }
@@ -493,7 +500,7 @@ struct SettingsView: View {
                                 // Year Picker
                                 Picker("Year", selection: $tempYear) {
                                     ForEach((1900...calendar.component(.year, from: Date())).reversed(), id: \.self) { year in
-                                        Text("\(year)").tag(year)
+                                        Text(String(format: "%d", year)).tag(year)
                                     }
                                 }
                                 .pickerStyle(.wheel)
