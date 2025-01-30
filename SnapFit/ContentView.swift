@@ -297,6 +297,43 @@ struct HeightPicker: View {
     }
 }
 
+// Create a separate view for the weight picker
+struct WeightPicker: View {
+    @Binding var weight: Double
+    @Binding var unit: String
+    
+    var body: some View {
+        HStack {
+            if unit == "kg" {
+                Picker("Weight", selection: $weight) {
+                    ForEach(30...200, id: \.self) { kg in
+                        Text("\(kg)").tag(Double(kg))
+                    }
+                }
+                .pickerStyle(.wheel)
+                Text("kg")
+                    .foregroundColor(.secondary)
+            } else {
+                Picker("Weight", selection: $weight) {
+                    ForEach(66...440, id: \.self) { lbs in
+                        Text("\(lbs)").tag(Double(lbs / 2.20462))
+                    }
+                }
+                .pickerStyle(.wheel)
+                Text("lbs")
+                    .foregroundColor(.secondary)
+            }
+            
+            Picker("Unit", selection: $unit) {
+                Text("kg").tag("kg")
+                Text("lbs").tag("lbs")
+            }
+            .pickerStyle(.segmented)
+            .frame(width: 100)
+        }
+    }
+}
+
 struct SettingsView: View {
     @AppStorage("userHeight") private var userHeight = 170.0 // Always stored in cm
     @AppStorage("userWeight") private var userWeight = 70.0 // Always stored in kg
@@ -419,50 +456,23 @@ struct SettingsView: View {
                     }
                     .sheet(isPresented: $isWeightPickerShown) {
                         NavigationStack {
-                            HStack {
-                                if weightUnit == "kg" {
-                                    Picker("Weight", selection: $tempWeight) {
-                                        ForEach(30...200, id: \.self) { kg in
-                                            Text("\(kg)").tag(Double(kg))
+                            WeightPicker(weight: $tempWeight, unit: $weightUnit)
+                                .padding()
+                                .navigationTitle("Weight")
+                                .navigationBarTitleDisplayMode(.inline)
+                                .toolbar {
+                                    ToolbarItem(placement: .cancellationAction) {
+                                        Button("Cancel") {
+                                            isWeightPickerShown = false
                                         }
                                     }
-                                    .pickerStyle(.wheel)
-                                    Text("kg")
-                                        .foregroundColor(.secondary)
-                                } else {
-                                    Picker("Weight", selection: $tempWeight) {
-                                        ForEach(66...440, id: \.self) { lbs in
-                                            Text("\(lbs)").tag(Double(lbs / 2.20462))
+                                    ToolbarItem(placement: .confirmationAction) {
+                                        Button("Done") {
+                                            userWeight = tempWeight
+                                            isWeightPickerShown = false
                                         }
                                     }
-                                    .pickerStyle(.wheel)
-                                    Text("lbs")
-                                        .foregroundColor(.secondary)
                                 }
-                                
-                                Picker("Unit", selection: $weightUnit) {
-                                    Text("kg").tag("kg")
-                                    Text("lbs").tag("lbs")
-                                }
-                                .pickerStyle(.segmented)
-                                .frame(width: 100)
-                            }
-                            .padding()
-                            .navigationTitle("Weight")
-                            .navigationBarTitleDisplayMode(.inline)
-                            .toolbar {
-                                ToolbarItem(placement: .cancellationAction) {
-                                    Button("Cancel") {
-                                        isWeightPickerShown = false
-                                    }
-                                }
-                                ToolbarItem(placement: .confirmationAction) {
-                                    Button("Done") {
-                                        userWeight = tempWeight
-                                        isWeightPickerShown = false
-                                    }
-                                }
-                            }
                         }
                         .presentationDetents([.height(300)])
                     }
@@ -518,7 +528,7 @@ struct SettingsView: View {
                             .padding()
                             .navigationTitle("Date of Birth")
                             .navigationBarTitleDisplayMode(.inline)
-                            .toolbar {
+                            .toolbar(content: {
                                 ToolbarItem(placement: .cancellationAction) {
                                     Button("Cancel") {
                                         isBirthdayPickerShown = false
@@ -537,7 +547,7 @@ struct SettingsView: View {
                                         isBirthdayPickerShown = false
                                     }
                                 }
-                            }
+                            })
                             .onChange(of: tempMonth) { _, _ in
                                 let maxDays = daysInMonth(month: tempMonth, year: tempYear)
                                 if tempDay > maxDays {
