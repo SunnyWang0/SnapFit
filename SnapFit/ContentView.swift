@@ -486,11 +486,74 @@ struct SettingsView: View {
                 
                 Section("Activity Level") {
                     Picker("Activity", selection: $activityLevel) {
-                        Text("Sedentary").tag("sedentary")
-                        Text("Light").tag("light")
-                        Text("Moderate").tag("moderate")
-                        Text("Active").tag("active")
-                        Text("Very Active").tag("very_active")
+                        Group {
+                            Text("Sedentary").tag("sedentary")
+                            Text("Light").tag("light")
+                            Text("Moderate").tag("moderate")
+                            Text("Active").tag("active")
+                            Text("Very Active").tag("very_active")
+                        }
+                    }
+                    
+                    // Activity level descriptions
+                    switch activityLevel {
+                    case "sedentary":
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Sedentary Lifestyle")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                            Text("• Desk job or mostly sitting throughout the day")
+                            Text("• Little to no planned exercise")
+                            Text("• Less than 5,000 steps per day")
+                            Text("• Example: Office worker with minimal activity")
+                        }
+                        .padding(.vertical, 4)
+                    case "light":
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Light Activity")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                            Text("• Mostly seated work with some movement")
+                            Text("• Light exercise 1-3 days per week")
+                            Text("• 5,000-7,500 steps per day")
+                            Text("• Example: Teacher, retail worker, or light housework")
+                        }
+                        .padding(.vertical, 4)
+                    case "moderate":
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Moderate Activity")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                            Text("• Mix of sitting and moving throughout day")
+                            Text("• Moderate exercise 3-5 days per week")
+                            Text("• 7,500-10,000 steps per day")
+                            Text("• Example: Server, active parent, regular gym-goer")
+                        }
+                        .padding(.vertical, 4)
+                    case "active":
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Active Lifestyle")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                            Text("• Physical job or standing most of day")
+                            Text("• Intense exercise 4-6 days per week")
+                            Text("• 10,000-12,500 steps per day")
+                            Text("• Example: Construction worker, fitness instructor")
+                        }
+                        .padding(.vertical, 4)
+                    case "very_active":
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Very Active Lifestyle")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                            Text("• Highly physical job or athletic training")
+                            Text("• Intense exercise 6-7 days per week")
+                            Text("• Over 12,500 steps per day")
+                            Text("• Example: Professional athlete, manual laborer")
+                        }
+                        .padding(.vertical, 4)
+                    default:
+                        EmptyView()
                     }
                 }
                 
