@@ -1,18 +1,28 @@
+Body Fat Analysis Worker Documentation
+
+Request Format:
+-------------
 The worker expects:
-A POST request
-Content-Type: multipart/form-data
-Form fields:
-image: A file (JPEG/PNG)
-height: string
-weight: string
-age: string
-gender: string
-activityLevel: string
-The worker will respond with JSON in this format:
+- A POST request
+- Content-Type: multipart/form-data
+- Form fields:
+  * image: A file (JPEG/PNG)
+  * userId: string (required for storage)
+  * height: string
+  * weight: string
+  * age: string
+  * gender: string
+  * activityLevel: string
+
+Response Format:
+--------------
 // Success case
 {
+    "success": true,
     "bodyFatPercentage": number,
-    "success": true
+    "timestamp": string,
+    "thumbnailUrl": string,  // URL to access the thumbnail version
+    "originalUrl": string    // URL to access the original version
 }
 
 // Error case
@@ -20,3 +30,61 @@ The worker will respond with JSON in this format:
     "error": string,
     "success": false
 }
+
+Example Usage:
+------------
+```javascript
+// Example using fetch API
+async function analyzeBodyFat(imageFile, userData) {
+    const formData = new FormData();
+    
+    // Add the image
+    formData.append('image', imageFile);
+    
+    // Add required user data
+    formData.append('userId', userData.userId);
+    formData.append('height', userData.height);
+    formData.append('weight', userData.weight);
+    formData.append('age', userData.age);
+    formData.append('gender', userData.gender);
+    formData.append('activityLevel', userData.activityLevel);
+
+    const response = await fetch('YOUR_WORKER_URL', {
+        method: 'POST',
+        body: formData
+    });
+
+    return await response.json();
+}
+```
+
+Storage Integration:
+-----------------
+The worker automatically:
+1. Stores both thumbnail and original versions of the image in WebP format
+2. Caches metadata including body fat percentage and weight
+3. Generates URLs for accessing both versions
+
+Accessing Stored Images:
+---------------------
+After successful upload, use the returned URLs:
+- Thumbnail: GET /photos/{userId}/{timestamp}/thumbnail
+- Original: GET /photos/{userId}/{timestamp}/original
+
+Error Handling:
+-------------
+The worker will return appropriate error responses for:
+- Missing required fields (400)
+- Invalid image format (400)
+- Processing failures (500)
+- API errors (500)
+
+Environment Variables Required:
+---------------------------
+- GEMINI_API_KEY: API key for Gemini Vision API
+- PHOTOS_BUCKET: R2 bucket for photo storage
+- PHOTO_CACHE: KV namespace for metadata
+- THUMBNAIL_WIDTH: Thumbnail width in pixels
+- THUMBNAIL_HEIGHT: Thumbnail height in pixels
+- THUMBNAIL_QUALITY: WebP quality for thumbnails (0-100)
+- ORIGINAL_QUALITY: WebP quality for originals (0-100)
