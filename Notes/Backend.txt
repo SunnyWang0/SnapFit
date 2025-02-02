@@ -4,7 +4,7 @@ Create a backend endpoint on Cloudflare
     - Temporarily upload the photo to a secure cloud storage service (like AWS S3, Google Cloud Storage, or Azure Blob Storage)
     - Use pre-signed URLs with short expiration times (e.g., 5 minutes)
     - Pass these temporary URLs to the OpenAI API
-- Backend endpoint sends the photo to GPT
+- Backend endpoint sends the photo to Gemini API
 - Get a response from the model
 - Returns the response to the user
 
