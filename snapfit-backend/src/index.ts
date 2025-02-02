@@ -37,8 +37,8 @@ async function handleImageUpload(request: Request, env: Env): Promise<Response> 
 			body: JSON.stringify({
 				contents: [{
 					parts: [{
-						text: `Given the users height, weight, age, gender, and activity level, analyze the image and provide the body fat percentage as a decimal 
-						number between 0 and 100. Only return a json object with the body fat percentage, 
+						text: `Given the users height, weight, age, gender, and activity level, analyze the image 
+						and provide the body fat percentage as a decimal number. Only return a json object with the body fat percentage, 
 						no additional text. The json object should be in the following format: 
 						{"bodyFatPercentage": <body fat percentage>}
 						
