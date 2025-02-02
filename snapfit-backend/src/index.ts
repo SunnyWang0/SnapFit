@@ -196,7 +196,10 @@ async function handleImageUpload(request: Request, env: Env): Promise<Response> 
 			originalUrl: `/photos/${userId}/${timestamp}/original`
 		}), {
 			headers: {
-				'Content-Type': 'application/json'
+				'Content-Type': 'application/json',
+				'Access-Control-Allow-Origin': '*',
+				'Access-Control-Allow-Methods': 'POST',
+				'Access-Control-Allow-Headers': 'Content-Type'
 			}
 		});
 
@@ -209,7 +212,10 @@ async function handleImageUpload(request: Request, env: Env): Promise<Response> 
 		}), {
 			status: 500,
 			headers: {
-				'Content-Type': 'application/json'
+				'Content-Type': 'application/json',
+				'Access-Control-Allow-Origin': '*',
+				'Access-Control-Allow-Methods': 'POST',
+				'Access-Control-Allow-Headers': 'Content-Type'
 			}
 		});
 	}
@@ -217,10 +223,28 @@ async function handleImageUpload(request: Request, env: Env): Promise<Response> 
 
 export default {
 	async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+		// Add OPTIONS handling for CORS preflight requests
+		if (request.method === 'OPTIONS') {
+			return new Response(null, {
+				headers: {
+					'Access-Control-Allow-Origin': '*',
+					'Access-Control-Allow-Methods': 'POST',
+					'Access-Control-Allow-Headers': 'Content-Type'
+				}
+			});
+		}
+
 		if (request.method === 'POST') {
 			return handleImageUpload(request, env);
 		}
 
-		return new Response('Method not allowed', { status: 405 });
+		return new Response('Method not allowed', { 
+			status: 405,
+			headers: {
+				'Access-Control-Allow-Origin': '*',
+				'Access-Control-Allow-Methods': 'POST',
+				'Access-Control-Allow-Headers': 'Content-Type'
+			}
+		});
 	},
 } satisfies ExportedHandler<Env>;
