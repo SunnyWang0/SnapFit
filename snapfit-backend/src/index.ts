@@ -7,9 +7,18 @@ async function handleImageUpload(request: Request, env: Env): Promise<Response> 
 	try {
 		const formData = await request.formData();
 		const imageFile = formData.get('image') as File;
+		const height = formData.get('height');
+		const weight = formData.get('weight');
+		const age = formData.get('age');
+		const gender = formData.get('gender');
+		const activityLevel = formData.get('activityLevel');
 		
 		if (!imageFile) {
 			return new Response('No image provided', { status: 400 });
+		}
+
+		if (!height || !weight || !age || !gender || !activityLevel) {
+			return new Response('Missing required user information', { status: 400 });
 		}
 
 		// Generate a unique filename
@@ -37,8 +46,14 @@ async function handleImageUpload(request: Request, env: Env): Promise<Response> 
 			body: JSON.stringify({
 				contents: [{
 					parts: [{
-						text: `Given the users height, weight, age, gender, and activity level, analyze the image 
-						and provide the body fat percentage as a decimal number to the nearest tenth. Only return a 
+						text: `Given the following user information:
+						- Height: ${height}
+						- Weight: ${weight}
+						- Age: ${age}
+						- Gender: ${gender}
+						- Activity Level: ${activityLevel}
+
+						Analyze the image and provide the body fat percentage as a decimal number to the nearest tenth. Only return a 
 						json object with the body fat percentage, no additional text. The json object should be in 
 						the following format: 
 						{
