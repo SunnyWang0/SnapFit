@@ -21,12 +21,4 @@ enum Configuration {
         }
     }
 }
-
-extension Configuration {
-    static var openAIApiKey: String {
-        guard let apiKey = try? Configuration.value(for: "OPENAI_API_KEY") as String else {
-            fatalError("OpenAI API Key not found")
-        }
-        return apiKey
-    }
-} 
+// OpenAI configuration removed 
