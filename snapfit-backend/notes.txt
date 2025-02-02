@@ -1,0 +1,22 @@
+The worker expects:
+A POST request
+Content-Type: multipart/form-data
+Form fields:
+image: A file (JPEG/PNG)
+height: string
+weight: string
+age: string
+gender: string
+activityLevel: string
+The worker will respond with JSON in this format:
+// Success case
+{
+    "bodyFatPercentage": number,
+    "success": true
+}
+
+// Error case
+{
+    "error": string,
+    "success": false
+}
