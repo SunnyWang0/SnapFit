@@ -9,14 +9,22 @@
     "test": "vitest"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20240208.0",
+    "@cloudflare/workers-types": "^4.20250129.0",
     "@types/node": "^20.11.19",
     "typescript": "^5.3.3",
     "vitest": "^2.1.8",
     "wrangler": "^3.60.3"
   },
   "dependencies": {
-    "itty-router": "^4.0.27",
-    "buffer": "^6.0.3"
-  }
+    "buffer": "^6.0.3",
+    "itty-router": "^4.2.2"
+  },
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": ""
 }
