@@ -1,17 +1,114 @@
+interface BodyFatAnalysis {
+	bodyFatPercentage: number;
+}
+
 interface Env {
 	GEMINI_API_KEY: string;
 	PHOTOS_BUCKET: R2Bucket;
+}
+
+interface UserInfo {
+	height: string;
+	weight: string;
+	age: string;
+	gender: string;
+	activityLevel: string;
+}
+
+interface GeminiResponse {
+	candidates: Array<{
+		content: {
+			parts: Array<{
+				text: string;
+			}>;
+		};
+	}>;
+}
+
+const MODEL_NAME = 'gemini-pro-vision';
+
+async function analyzeBodyImage(
+	imageBase64: string,
+	userInfo: UserInfo,
+	apiKey: string
+): Promise<BodyFatAnalysis> {
+	const prompt = `Given the following user information:
+		- Height: ${userInfo.height}
+		- Weight: ${userInfo.weight}
+		- Age: ${userInfo.age}
+		- Gender: ${userInfo.gender}
+		- Activity Level: ${userInfo.activityLevel}
+
+		Analyze the image and provide the body fat percentage as a decimal number to the nearest tenth. 
+		Only return a json object with the body fat percentage, no additional text. 
+		The json object should be in the following format: 
+		{
+			"bodyFatPercentage": <body fat percentage>
+		}
+		
+		- Do not include any other text or commentary in your response
+		- Make your best guess, even if the image is not clear or the user is wearing/not wearing clothes.`;
+
+	const requestBody = {
+		contents: [{
+			parts: [
+				{ text: prompt },
+				{
+					inlineData: {
+						mimeType: 'image/jpeg',
+						data: imageBase64
+					}
+				}
+			]
+		}]
+	};
+
+	const response = await fetch(
+		`https://generativelanguage.googleapis.com/v1/models/${MODEL_NAME}:generateContent`, 
+		{
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+				'Authorization': `Bearer ${apiKey}`
+			},
+			body: JSON.stringify(requestBody)
+		}
+	);
+
+	if (!response.ok) {
+		throw new Error(`Gemini API error: ${response.statusText}`);
+	}
+
+	const data = await response.json() as GeminiResponse;
+	
+	if (!data.candidates?.[0]?.content?.parts?.[0]?.text) {
+		throw new Error('Invalid response format from Gemini API');
+	}
+
+	// Extract the JSON string from the response text
+	const responseText = data.candidates[0].content.parts[0].text;
+	const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+	
+	if (!jsonMatch) {
+		throw new Error('Could not find JSON in response');
+	}
+
+	try {
+		return JSON.parse(jsonMatch[0]) as BodyFatAnalysis;
+	} catch (e) {
+		throw new Error('Failed to parse response JSON');
+	}
 }
 
 async function handleImageUpload(request: Request, env: Env): Promise<Response> {
 	try {
 		const formData = await request.formData();
 		const imageFile = formData.get('image') as File;
-		const height = formData.get('height');
-		const weight = formData.get('weight');
-		const age = formData.get('age');
-		const gender = formData.get('gender');
-		const activityLevel = formData.get('activityLevel');
+		const height = formData.get('height') as string;
+		const weight = formData.get('weight') as string;
+		const age = formData.get('age') as string;
+		const gender = formData.get('gender') as string;
+		const activityLevel = formData.get('activityLevel') as string;
 		
 		if (!imageFile) {
 			return new Response('No image provided', { status: 400 });
@@ -36,57 +133,18 @@ async function handleImageUpload(request: Request, env: Env): Promise<Response> 
 		const imageBuffer = await imageFile.arrayBuffer();
 		const base64Image = btoa(String.fromCharCode(...new Uint8Array(imageBuffer)));
 
-		// Call Gemini API
-		const response = await fetch('https://generativelanguage.googleapis.com/v1/models/gemini-pro-vision:generateContent', {
-			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json',
-				'Authorization': `Bearer ${env.GEMINI_API_KEY}`,
-			},
-			body: JSON.stringify({
-				contents: [{
-					parts: [{
-						text: `Given the following user information:
-						- Height: ${height}
-						- Weight: ${weight}
-						- Age: ${age}
-						- Gender: ${gender}
-						- Activity Level: ${activityLevel}
-
-						Analyze the image and provide the body fat percentage as a decimal number to the nearest tenth. Only return a 
-						json object with the body fat percentage, no additional text. The json object should be in 
-						the following format: 
-						{
-							"bodyFat": <body fat percentage>
-						}
-						
-						- Do not include any other text or commentary in your response
-						- Make your best guess, even if the image is not clear or the user is wearing/not wearing clothes.`,
-					}, {
-						inline_data: {
-							mime_type: imageFile.type,
-							data: base64Image
-						}
-					}]
-				}]
-			})
-		});
-
-		const analysisResult = await response.json() as {
-			candidates: Array<{
-				content: {
-					parts: Array<{
-						text: string
-					}>
-				}
-			}>
+		const userInfo: UserInfo = {
+			height,
+			weight,
+			age,
+			gender,
+			activityLevel
 		};
-		
-		// Extract the body fat percentage from Gemini's response
-		const bodyFatPercentage = parseFloat(analysisResult.candidates[0].content.parts[0].text);
 
+		const analysis = await analyzeBodyImage(base64Image, userInfo, env.GEMINI_API_KEY);
+		
 		return new Response(JSON.stringify({
-			bodyFatPercentage,
+			bodyFatPercentage: analysis.bodyFatPercentage,
 			success: true
 		}), {
 			headers: {
@@ -96,8 +154,9 @@ async function handleImageUpload(request: Request, env: Env): Promise<Response> 
 
 	} catch (error) {
 		console.error('Error processing image:', error);
+		const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
 		return new Response(JSON.stringify({
-			error: 'Failed to process image',
+			error: errorMessage,
 			success: false
 		}), {
 			status: 500,
