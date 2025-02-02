@@ -46,3 +46,4 @@ Config.xcconfig
 
 wrangler.toml
 .env
+wrangler.json
