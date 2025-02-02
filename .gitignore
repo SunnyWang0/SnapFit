@@ -46,4 +46,4 @@ Config.xcconfig
 
 wrangler.toml
 .env
-wrangler.json
+snapfit-backend/wrangler.json
